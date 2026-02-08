@@ -3,15 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ServerStatus } from "@/types";
+import type { ServerThroughput } from "@/hooks/use-realtime-throughput";
 import { StatusBadge } from "./status-badge";
 import { MetricValue } from "./metric-value";
 import { SlotIndicator } from "./slot-indicator";
 
 interface ServerCardProps {
   server: ServerStatus;
+  throughput?: ServerThroughput;
 }
 
-export function ServerCard({ server }: ServerCardProps) {
+export function ServerCard({ server, throughput }: ServerCardProps) {
   const { config, online, metrics, slots, vllm } = server;
   const isProcessing = metrics?.requests_processing
     ? metrics.requests_processing > 0
@@ -41,7 +43,7 @@ export function ServerCard({ server }: ServerCardProps) {
       </CardHeader>
       <CardContent>
         {config.framework === "llama.cpp" && online && metrics ? (
-          <LlamaCppDetails metrics={metrics} slots={slots ?? []} />
+          <LlamaCppDetails metrics={metrics} slots={slots ?? []} throughput={throughput} />
         ) : config.framework === "vllm-mlx" && online && vllm ? (
           <VllmMlxDetails vllm={vllm} />
         ) : !online ? (
@@ -55,21 +57,23 @@ export function ServerCard({ server }: ServerCardProps) {
 function LlamaCppDetails({
   metrics,
   slots,
+  throughput,
 }: {
   metrics: NonNullable<ServerStatus["metrics"]>;
   slots: NonNullable<ServerStatus["slots"]>;
+  throughput?: ServerThroughput;
 }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <MetricValue
           label="Generation"
-          value={metrics.predicted_tokens_seconds}
+          value={throughput?.generation ?? 0}
           suffix="tok/s"
         />
         <MetricValue
           label="Prompt"
-          value={metrics.prompt_tokens_seconds}
+          value={throughput?.prompt ?? 0}
           suffix="tok/s"
         />
         <MetricValue

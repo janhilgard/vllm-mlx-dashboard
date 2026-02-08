@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useServersData, useGpuData } from "@/hooks/use-dashboard-data";
 import { useTimeSeries } from "@/hooks/use-time-series";
+import { useRealtimeThroughput } from "@/hooks/use-realtime-throughput";
 import { SERVERS } from "@/lib/server-config";
 import { GlobalStats } from "./global-stats";
 import { ServerCard } from "./server-card";
@@ -14,6 +15,7 @@ export function Dashboard() {
   const { data: serversData, isLoading: serversLoading } = useServersData();
   const { data: gpuData } = useGpuData();
   const timeSeries = useTimeSeries(serversData, gpuData);
+  const realtimeThroughput = useRealtimeThroughput(serversData);
 
   const aggregated = useMemo(() => {
     if (!serversData) return null;
@@ -24,7 +26,7 @@ export function Dashboard() {
       onlineCount: online.length,
       totalCount: serversData.servers.length,
       totalThroughput: llamacpp.reduce(
-        (sum, s) => sum + (s.metrics?.predicted_tokens_seconds ?? 0),
+        (sum, s) => sum + (realtimeThroughput[s.config.id]?.generation ?? 0),
         0
       ),
       totalTokens: llamacpp.reduce(
@@ -64,7 +66,7 @@ export function Dashboard() {
         0
       ),
     };
-  }, [serversData]);
+  }, [serversData, realtimeThroughput]);
 
   if (serversLoading) {
     return (
@@ -94,7 +96,11 @@ export function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {serversData?.servers.map((server) => (
-          <ServerCard key={server.config.id} server={server} />
+          <ServerCard
+            key={server.config.id}
+            server={server}
+            throughput={realtimeThroughput[server.config.id]}
+          />
         ))}
       </div>
     </div>
