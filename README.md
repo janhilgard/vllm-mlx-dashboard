@@ -2,6 +2,8 @@
 
 Real-time monitoring dashboard for local LLM inference servers running on Apple Silicon. Tracks both [llama.cpp](https://github.com/ggml-org/llama.cpp) and [vllm-mlx](https://github.com/vllm-project/vllm-mlx) backends from a single UI.
 
+![Screenshot](docs/screenshot.png)
+
 ## Features
 
 - **Global stats** — aggregated online count, throughput, token totals, active/deferred requests, slot utilization, GPU usage
