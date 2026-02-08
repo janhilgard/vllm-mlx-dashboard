@@ -8,8 +8,9 @@ Real-time monitoring dashboard for local LLM inference servers running on Apple 
 
 - **Global stats** — aggregated online count, throughput, token totals, active/deferred requests, slot utilization, GPU usage
 - **Per-server cards** with live metrics:
-  - **llama.cpp** — generation & prompt tok/s, KV-cache ratio, slot status
+  - **llama.cpp** — generation & prompt tok/s, active/deferred requests, slot status
   - **vllm-mlx** — uptime, running/waiting requests, completion & prompt tokens, Metal GPU memory (active/peak), KV-cache hit rate & utilization
+- **Sparkline charts** per server — tok/s throughput and active requests history
 - **Throughput chart** — real-time tok/s computed from token count deltas (not averaged gauges)
 - **GPU chart** — utilization % and power draw over time
 - Auto-refresh via SWR polling (2s servers, 5s GPU)
@@ -20,7 +21,6 @@ Real-time monitoring dashboard for local LLM inference servers running on Apple 
 |--------|------|-----------|
 | GPT-OSS-20B | 1235 | llama.cpp |
 | Qwen3-VL-8B | 1236 | llama.cpp |
-| Qwen3-Next-80B | 1237 | llama.cpp |
 | Qwen3-30B | 1238 | llama.cpp |
 | Qwen3-Next-80B-MLX | 1239 | vllm-mlx |
 | GPT-OSS-20B-MLX | 1240 | vllm-mlx |
