@@ -16,10 +16,15 @@ export function useTimeSeries(
 ) {
   const historyRef = useRef<TimeSeriesPoint[]>([]);
   const prevRef = useRef<PrevSnapshot | null>(null);
+  const prevGpuRef = useRef<GpuResponse | undefined>(undefined);
   const [, setTick] = useState(0);
 
   useEffect(() => {
     if (!serversData) return;
+
+    // Přeskočit pokud se GPU data nezměnila (zamezit duplicitním bodům)
+    if (gpuData === prevGpuRef.current) return;
+    prevGpuRef.current = gpuData;
 
     const now = Date.now();
 
