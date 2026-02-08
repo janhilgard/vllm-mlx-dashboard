@@ -37,10 +37,17 @@ export function useTimeSeries(
     const currentTokens: Record<string, number> = {};
 
     for (const server of serversData.servers) {
-      if (server.config.framework === "llama.cpp" && server.metrics) {
-        const id = server.config.id;
-        currentTokens[id] = server.metrics.tokens_predicted_total;
+      const id = server.config.id;
 
+      if (server.config.framework === "llama.cpp" && server.metrics) {
+        currentTokens[id] = server.metrics.tokens_predicted_total;
+        point[`${id}_requests`] = server.metrics.requests_processing;
+      } else if (server.config.framework === "vllm-mlx" && server.vllm) {
+        currentTokens[id] = server.vllm.total_completion_tokens;
+        point[`${id}_requests`] = server.vllm.num_running;
+      }
+
+      if (currentTokens[id] != null) {
         if (prevRef.current) {
           const prevTokens = prevRef.current.tokens[id];
           const dt = (now - prevRef.current.timestamp) / 1000;

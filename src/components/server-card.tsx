@@ -2,18 +2,20 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ServerStatus } from "@/types";
+import { ServerStatus, TimeSeriesPoint } from "@/types";
 import type { ServerThroughput } from "@/hooks/use-realtime-throughput";
 import { StatusBadge } from "./status-badge";
 import { MetricValue } from "./metric-value";
 import { SlotIndicator } from "./slot-indicator";
+import { Sparkline } from "./sparkline";
 
 interface ServerCardProps {
   server: ServerStatus;
   throughput?: ServerThroughput;
+  history?: TimeSeriesPoint[];
 }
 
-export function ServerCard({ server, throughput }: ServerCardProps) {
+export function ServerCard({ server, throughput, history }: ServerCardProps) {
   const { config, online, metrics, slots, vllm } = server;
   const isProcessing = metrics?.requests_processing
     ? metrics.requests_processing > 0
@@ -43,9 +45,9 @@ export function ServerCard({ server, throughput }: ServerCardProps) {
       </CardHeader>
       <CardContent>
         {config.framework === "llama.cpp" && online && metrics ? (
-          <LlamaCppDetails metrics={metrics} slots={slots ?? []} throughput={throughput} />
+          <LlamaCppDetails metrics={metrics} slots={slots ?? []} throughput={throughput} history={history} serverId={config.id} color={config.color} />
         ) : config.framework === "vllm-mlx" && online && vllm ? (
-          <VllmMlxDetails vllm={vllm} />
+          <VllmMlxDetails vllm={vllm} history={history} serverId={config.id} color={config.color} />
         ) : !online ? (
           <p className="text-xs text-muted-foreground">Server unavailable</p>
         ) : null}
@@ -58,10 +60,16 @@ function LlamaCppDetails({
   metrics,
   slots,
   throughput,
+  history,
+  serverId,
+  color,
 }: {
   metrics: NonNullable<ServerStatus["metrics"]>;
   slots: NonNullable<ServerStatus["slots"]>;
   throughput?: ServerThroughput;
+  history?: TimeSeriesPoint[];
+  serverId: string;
+  color: string;
 }) {
   return (
     <div className="space-y-3">
@@ -94,6 +102,12 @@ function LlamaCppDetails({
           value={metrics.prompt_tokens_total}
         />
       </div>
+      {history && history.length > 1 && (
+        <div className="space-y-2">
+          <Sparkline data={history} dataKey={serverId} color={color} label="tok/s" />
+          <Sparkline data={history} dataKey={`${serverId}_requests`} color={`${color}80`} label="Requests" />
+        </div>
+      )}
       {slots.length > 0 && <SlotIndicator slots={slots} />}
     </div>
   );
@@ -105,7 +119,7 @@ function formatUptime(seconds: number): string {
   return `${h}h ${m}m`;
 }
 
-function VllmMlxDetails({ vllm }: { vllm: NonNullable<ServerStatus["vllm"]> }) {
+function VllmMlxDetails({ vllm, history, serverId, color }: { vllm: NonNullable<ServerStatus["vllm"]>; history?: TimeSeriesPoint[]; serverId: string; color: string }) {
   const hasFullStatus = vllm.uptime_s != null;
 
   if (!hasFullStatus) {
@@ -140,6 +154,13 @@ function VllmMlxDetails({ vllm }: { vllm: NonNullable<ServerStatus["vllm"]> }) {
         <MetricValue label="Completion Tok." value={vllm.total_completion_tokens} />
         <MetricValue label="Prompt Tok." value={vllm.total_prompt_tokens} />
       </div>
+
+      {history && history.length > 1 && (
+        <div className="space-y-2">
+          <Sparkline data={history} dataKey={serverId} color={color} label="tok/s" />
+          <Sparkline data={history} dataKey={`${serverId}_requests`} color={`${color}80`} label="Requests" />
+        </div>
+      )}
 
       {vllm.metal && (
         <div className="space-y-1.5">

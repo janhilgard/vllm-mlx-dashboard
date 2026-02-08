@@ -100,6 +100,7 @@ export function Dashboard() {
             key={server.config.id}
             server={server}
             throughput={realtimeThroughput[server.config.id]}
+            history={timeSeries}
           />
         ))}
       </div>
