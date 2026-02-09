@@ -1,6 +1,6 @@
 "use client";
 
-import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { TimeSeriesPoint } from "@/types";
 
 interface SparklineProps {
@@ -20,8 +20,22 @@ export function Sparkline({ data, dataKey, color, label }: SparklineProps) {
       {label && (
         <span className="text-xs text-muted-foreground">{label}</span>
       )}
-      <ResponsiveContainer width="100%" height={40}>
+      <ResponsiveContainer width="100%" height={90}>
         <LineChart data={recent}>
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }}
+            tickLine={false}
+            axisLine={{ stroke: "hsl(0 0% 30%)" }}
+            interval="preserveStartEnd"
+          />
+          <YAxis
+            tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }}
+            tickLine={false}
+            axisLine={{ stroke: "hsl(0 0% 30%)" }}
+            width={35}
+            tickCount={3}
+          />
           <Line
             type="monotone"
             dataKey={dataKey}
