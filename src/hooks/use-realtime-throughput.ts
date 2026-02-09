@@ -31,6 +31,9 @@ export function useRealtimeThroughput(
       if (server.config.framework === "llama.cpp" && server.metrics) {
         currentGen[server.config.id] = server.metrics.tokens_predicted_total;
         currentPrompt[server.config.id] = server.metrics.prompt_tokens_total;
+      } else if (server.vllm) {
+        currentGen[server.config.id] = server.vllm.total_completion_tokens;
+        currentPrompt[server.config.id] = server.vllm.total_prompt_tokens;
       }
     }
 

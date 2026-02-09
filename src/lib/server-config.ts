@@ -27,6 +27,13 @@ export const SERVERS: ServerConfig[] = [
     name: "GPT-OSS-20B-MLX",
     port: 1235,
     framework: "vllm-mlx",
-    color: "#ec4899",
+    color: "#f97316",
+  },
+  {
+    id: "qwen3-vl-8b-mlx",
+    name: "Qwen3-VL-8B-MLX",
+    port: 1241,
+    framework: "vllm-mlx",
+    color: "#06b6d4",
   },
 ];

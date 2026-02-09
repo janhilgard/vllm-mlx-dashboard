@@ -25,7 +25,7 @@ export function Dashboard() {
     return {
       onlineCount: online.length,
       totalCount: serversData.servers.length,
-      totalThroughput: llamacpp.reduce(
+      totalThroughput: online.reduce(
         (sum, s) => sum + (realtimeThroughput[s.config.id]?.generation ?? 0),
         0
       ),

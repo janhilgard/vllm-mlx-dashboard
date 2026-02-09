@@ -60,9 +60,7 @@ export function ThroughputChart({ data, servers }: ThroughputChartProps) {
               <Legend
                 wrapperStyle={{ fontSize: 11 }}
               />
-              {servers
-                .filter((s) => s.framework === "llama.cpp")
-                .map((server) => (
+              {servers.map((server) => (
                   <Line
                     key={server.id}
                     type="monotone"
