@@ -38,13 +38,13 @@ export function ThroughputChart({ data, servers }: ThroughputChartProps) {
                 dataKey="label"
                 tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: "hsl(0 0% 30%)" }}
                 interval="preserveStartEnd"
               />
               <YAxis
                 tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: "hsl(0 0% 30%)" }}
                 tickFormatter={(v) => `${v}`}
                 width={40}
               />

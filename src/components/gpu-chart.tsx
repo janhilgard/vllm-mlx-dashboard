@@ -44,7 +44,7 @@ export function GpuChart({ data }: GpuChartProps) {
                 dataKey="label"
                 tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: "hsl(0 0% 30%)" }}
                 interval="preserveStartEnd"
               />
               <YAxis
@@ -52,7 +52,7 @@ export function GpuChart({ data }: GpuChartProps) {
                 domain={[0, 100]}
                 tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: "hsl(0 0% 30%)" }}
                 tickFormatter={(v) => `${v}%`}
                 width={40}
               />
@@ -61,7 +61,7 @@ export function GpuChart({ data }: GpuChartProps) {
                 orientation="right"
                 tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: "hsl(0 0% 30%)" }}
                 tickFormatter={(v) => `${v}W`}
                 width={40}
               />
