@@ -14,10 +14,12 @@ interface Snapshot {
   promptTokens: Record<string, number>;
 }
 
+const WINDOW_SIZE = 15;
+
 export function useRealtimeThroughput(
   serversData: ServersResponse | undefined
 ): Record<string, ServerThroughput> {
-  const prevRef = useRef<Snapshot | null>(null);
+  const historyRef = useRef<Snapshot[]>([]);
   const [throughput, setThroughput] = useState<Record<string, ServerThroughput>>({});
 
   useEffect(() => {
@@ -37,13 +39,18 @@ export function useRealtimeThroughput(
       }
     }
 
-    if (prevRef.current) {
-      const dt = (now - prevRef.current.timestamp) / 1000;
+    const snap: Snapshot = { timestamp: now, genTokens: currentGen, promptTokens: currentPrompt };
+    historyRef.current = [...historyRef.current.slice(-(WINDOW_SIZE - 1)), snap];
+
+    const history = historyRef.current;
+    if (history.length >= 2) {
+      const oldest = history[0];
+      const dt = (now - oldest.timestamp) / 1000;
       if (dt > 0) {
         const next: Record<string, ServerThroughput> = {};
         for (const id of Object.keys(currentGen)) {
-          const dGen = (currentGen[id] ?? 0) - (prevRef.current.genTokens[id] ?? 0);
-          const dPrompt = (currentPrompt[id] ?? 0) - (prevRef.current.promptTokens[id] ?? 0);
+          const dGen = (currentGen[id] ?? 0) - (oldest.genTokens[id] ?? 0);
+          const dPrompt = (currentPrompt[id] ?? 0) - (oldest.promptTokens[id] ?? 0);
           next[id] = {
             generation: dGen > 0 ? Math.round((dGen / dt) * 10) / 10 : 0,
             prompt: dPrompt > 0 ? Math.round((dPrompt / dt) * 10) / 10 : 0,
@@ -52,8 +59,6 @@ export function useRealtimeThroughput(
         setThroughput(next);
       }
     }
-
-    prevRef.current = { timestamp: now, genTokens: currentGen, promptTokens: currentPrompt };
   }, [serversData]);
 
   return throughput;
