@@ -170,12 +170,12 @@ function VllmMlxDetails({ vllm, history, serverId, color }: { vllm: NonNullable<
               <div
                 className="h-full rounded-full bg-blue-500"
                 style={{
-                  width: `${Math.min((vllm.metal.active_memory_gb / vllm.metal.peak_memory_gb) * 100, 100)}%`,
+                  width: `${vllm.metal.peak_memory_gb ? Math.min((vllm.metal.active_memory_gb / vllm.metal.peak_memory_gb) * 100, 100) : 0}%`,
                 }}
               />
             </div>
             <span className="text-xs font-mono whitespace-nowrap">
-              {vllm.metal.active_memory_gb.toFixed(1)} / {vllm.metal.peak_memory_gb.toFixed(1)} GB
+              {(vllm.metal.active_memory_gb ?? 0).toFixed(1)} / {(vllm.metal.peak_memory_gb ?? 0).toFixed(1)} GB
             </span>
           </div>
         </div>
@@ -189,18 +189,18 @@ function VllmMlxDetails({ vllm, history, serverId, color }: { vllm: NonNullable<
               <div
                 className="h-full rounded-full bg-amber-500"
                 style={{
-                  width: `${Math.min(vllm.cache.memory_utilization * 100, 100)}%`,
+                  width: `${Math.min((vllm.cache.memory_utilization ?? 0) * 100, 100)}%`,
                 }}
               />
             </div>
             <span className="text-xs font-mono whitespace-nowrap">
-              {(vllm.cache.memory_utilization * 100).toFixed(1)}%
+              {((vllm.cache.memory_utilization ?? 0) * 100).toFixed(1)}%
             </span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div>
               <span className="text-muted-foreground">Hit rate</span>
-              <span className="font-mono ml-1">{(vllm.cache.hit_rate * 100).toFixed(1)}%</span>
+              <span className="font-mono ml-1">{((vllm.cache.hit_rate ?? 0) * 100).toFixed(1)}%</span>
             </div>
             <div>
               <span className="text-muted-foreground">Saved</span>
