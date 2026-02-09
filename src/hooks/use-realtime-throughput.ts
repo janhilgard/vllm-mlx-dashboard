@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ServersResponse } from "@/types";
+import { ServerStatus, ServersResponse } from "@/types";
 
 export interface ServerThroughput {
   generation: number;
@@ -15,6 +15,22 @@ interface Snapshot {
 }
 
 const WINDOW_SIZE = 15;
+
+function getEffectiveTokens(server: ServerStatus): { gen: number; prompt: number } | null {
+  if (server.config.framework === "llama.cpp" && server.metrics) {
+    return { gen: server.metrics.tokens_predicted_total, prompt: server.metrics.prompt_tokens_total };
+  }
+  if (server.vllm) {
+    const reqs = server.vllm.requests ?? [];
+    const inflightGen = reqs.reduce((s, r) => s + (r.completion_tokens ?? 0), 0);
+    const inflightPrompt = reqs.reduce((s, r) => s + (r.prompt_tokens ?? 0), 0);
+    return {
+      gen: server.vllm.total_completion_tokens + inflightGen,
+      prompt: server.vllm.total_prompt_tokens + inflightPrompt,
+    };
+  }
+  return null;
+}
 
 export function useRealtimeThroughput(
   serversData: ServersResponse | undefined
@@ -30,12 +46,10 @@ export function useRealtimeThroughput(
     const currentPrompt: Record<string, number> = {};
 
     for (const server of serversData.servers) {
-      if (server.config.framework === "llama.cpp" && server.metrics) {
-        currentGen[server.config.id] = server.metrics.tokens_predicted_total;
-        currentPrompt[server.config.id] = server.metrics.prompt_tokens_total;
-      } else if (server.vllm) {
-        currentGen[server.config.id] = server.vllm.total_completion_tokens;
-        currentPrompt[server.config.id] = server.vllm.total_prompt_tokens;
+      const tokens = getEffectiveTokens(server);
+      if (tokens) {
+        currentGen[server.config.id] = tokens.gen;
+        currentPrompt[server.config.id] = tokens.prompt;
       }
     }
 

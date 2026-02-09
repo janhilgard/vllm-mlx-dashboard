@@ -22,6 +22,15 @@ export interface SlotInfo {
   task_id?: number;
 }
 
+export interface VllmRequest {
+  request_id: string;
+  status: string;
+  phase: string;
+  completion_tokens: number;
+  prompt_tokens: number;
+  tokens_per_second: number;
+}
+
 export interface VllmMlxStatus {
   status: string;
   model: string;
@@ -48,7 +57,7 @@ export interface VllmMlxStatus {
     memory_utilization: number;
     entry_count: number;
   };
-  requests: unknown[];
+  requests: VllmRequest[];
 }
 
 export interface ServerStatus {

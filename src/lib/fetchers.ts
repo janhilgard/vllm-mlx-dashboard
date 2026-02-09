@@ -17,7 +17,7 @@ export async function fetchLlamaCppStatus(config: ServerConfig): Promise<ServerS
   const [healthResult, metricsResult, slotsResult] = await Promise.allSettled([
     fetchWithTimeout(`${base}/health`).then((r) => r.json()),
     fetchWithTimeout(`${base}/metrics`).then((r) => r.text()),
-    fetchWithTimeout(`${base}/slots`).then((r) => r.json()),
+    fetchWithTimeout(`${base}/slots`).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
   ]);
 
   const online = healthResult.status === "fulfilled";

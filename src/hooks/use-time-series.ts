@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ServersResponse, GpuResponse, TimeSeriesPoint } from "@/types";
+import { ServerStatus, ServersResponse, GpuResponse, TimeSeriesPoint } from "@/types";
 
 const MAX_POINTS = 60;
 
@@ -48,7 +48,8 @@ export function useTimeSeries(
         currentTokens[id] = server.metrics.tokens_predicted_total;
         point[`${id}_requests`] = server.metrics.requests_processing;
       } else if (server.config.framework === "vllm-mlx" && server.vllm) {
-        currentTokens[id] = server.vllm.total_completion_tokens;
+        const inflightGen = (server.vllm.requests ?? []).reduce((s, r) => s + (r.completion_tokens ?? 0), 0);
+        currentTokens[id] = server.vllm.total_completion_tokens + inflightGen;
         point[`${id}_requests`] = server.vllm.num_running;
       }
 
