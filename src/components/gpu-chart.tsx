@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Line,
   ComposedChart,
+  Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimeSeriesPoint } from "@/types";
@@ -63,6 +64,11 @@ export function GpuChart({ data }: GpuChartProps) {
                 axisLine={false}
                 tickFormatter={(v) => `${v}W`}
                 width={40}
+              />
+              <Legend
+                verticalAlign="top"
+                height={28}
+                wrapperStyle={{ fontSize: 12, color: "hsl(0 0% 60%)" }}
               />
               <Tooltip
                 contentStyle={{

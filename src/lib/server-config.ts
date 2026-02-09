@@ -2,13 +2,6 @@ import { ServerConfig } from "@/types";
 
 export const SERVERS: ServerConfig[] = [
   {
-    id: "gpt-oss-20b",
-    name: "GPT-OSS-20B",
-    port: 1235,
-    framework: "llama.cpp",
-    color: "#22c55e",
-  },
-  {
     id: "qwen3-vl-8b",
     name: "Qwen3-VL-8B",
     port: 1236,
@@ -32,7 +25,7 @@ export const SERVERS: ServerConfig[] = [
   {
     id: "gpt-oss-20b-mlx",
     name: "GPT-OSS-20B-MLX",
-    port: 1240,
+    port: 1235,
     framework: "vllm-mlx",
     color: "#ec4899",
   },
