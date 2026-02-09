@@ -9,13 +9,6 @@ export const SERVERS: ServerConfig[] = [
     color: "#3b82f6",
   },
   {
-    id: "qwen3-30b",
-    name: "Qwen3-30B",
-    port: 1238,
-    framework: "llama.cpp",
-    color: "#a855f7",
-  },
-  {
     id: "qwen3-next-80b-mlx",
     name: "Qwen3-Next-80B-MLX",
     port: 1239,
