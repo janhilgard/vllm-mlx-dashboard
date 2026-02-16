@@ -2,13 +2,6 @@ import { ServerConfig } from "@/types";
 
 export const SERVERS: ServerConfig[] = [
   {
-    id: "qwen3-vl-8b",
-    name: "Qwen3-VL-8B",
-    port: 1236,
-    framework: "llama.cpp",
-    color: "#3b82f6",
-  },
-  {
     id: "qwen3-next-80b-mlx",
     name: "Qwen3-Next-80B-MLX",
     port: 1239,
@@ -25,8 +18,15 @@ export const SERVERS: ServerConfig[] = [
   {
     id: "qwen3-vl-8b-mlx",
     name: "Qwen3-VL-8B-MLX",
-    port: 1241,
+    port: 1236,
     framework: "vllm-mlx",
     color: "#06b6d4",
+  },
+  {
+    id: "qwen3-coder-next-mlx",
+    name: "Step 3.5 Flash",
+    port: 1340,
+    framework: "vllm-mlx",
+    color: "#8b5cf6",
   },
 ];
