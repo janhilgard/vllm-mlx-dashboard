@@ -2,8 +2,8 @@ import { ServerConfig } from "@/types";
 
 export const SERVERS: ServerConfig[] = [
   {
-    id: "qwen3-next-80b-mlx",
-    name: "Qwen3-Next-80B-MLX",
+    id: "qwen3-next-80b-a3b-mlx",
+    name: "Qwen3-Next-80B-A3B-MLX",
     port: 1239,
     framework: "vllm-mlx",
     color: "#ef4444",
@@ -21,12 +21,5 @@ export const SERVERS: ServerConfig[] = [
     port: 1236,
     framework: "vllm-mlx",
     color: "#06b6d4",
-  },
-  {
-    id: "qwen3-coder-next-mlx",
-    name: "Step 3.5 Flash",
-    port: 1340,
-    framework: "vllm-mlx",
-    color: "#8b5cf6",
   },
 ];
