@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ServerStatus, TimeSeriesPoint } from "@/types";
@@ -31,7 +32,10 @@ export function ServerCard({ server, throughput, history }: ServerCardProps) {
       />
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium">{config.name}</CardTitle>
+          <div className="flex items-center gap-1.5">
+            <CardTitle className="text-sm font-medium">{config.name}</CardTitle>
+            {config.modelId && <CopyButton text={config.modelId} title="Copy model ID" />}
+          </div>
           <StatusBadge online={online} processing={isProcessing} />
         </div>
         <div className="flex items-center gap-2">
@@ -42,6 +46,7 @@ export function ServerCard({ server, throughput, history }: ServerCardProps) {
             {config.framework}
           </Badge>
         </div>
+        <CopyableEndpoint port={config.port} />
       </CardHeader>
       <CardContent>
         {config.framework === "llama.cpp" && online && metrics ? (
@@ -213,6 +218,43 @@ function VllmMlxDetails({ vllm, history, serverId, color }: { vllm: NonNullable<
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function CopyButton({ text, title }: { text: string; title?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="text-muted-foreground hover:text-foreground transition-colors"
+      title={title}
+    >
+      {copied ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><polyline points="20 6 9 17 4 12"/></svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      )}
+    </button>
+  );
+}
+
+function CopyableEndpoint({ port }: { port: number }) {
+  const url = `http://10.66.66.29:${port}/v1`;
+
+  return (
+    <div className="flex items-center gap-1.5 mt-1">
+      <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
+        {url}
+      </code>
+      <CopyButton text={url} title="Copy endpoint URL" />
     </div>
   );
 }

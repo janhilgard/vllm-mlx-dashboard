@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ServerStatus, ServersResponse, GpuResponse, TimeSeriesPoint } from "@/types";
+import { ServersResponse, GpuResponse, TimeSeriesPoint } from "@/types";
 
 const MAX_POINTS = 60;
 
@@ -14,23 +14,20 @@ export function useTimeSeries(
   serversData: ServersResponse | undefined,
   gpuData: GpuResponse | undefined
 ) {
-  const historyRef = useRef<TimeSeriesPoint[]>([]);
+  const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
   const prevRef = useRef<PrevSnapshot | null>(null);
-  const prevGpuRef = useRef<GpuResponse | undefined>(undefined);
-  const [, setTick] = useState(0);
+  const lastProcessedRef = useRef<number>(0);
 
   useEffect(() => {
     if (!serversData) return;
+    if (serversData.timestamp === lastProcessedRef.current) return;
+    lastProcessedRef.current = serversData.timestamp;
 
-    // Přeskočit pokud se GPU data nezměnila (zamezit duplicitním bodům)
-    if (gpuData === prevGpuRef.current) return;
-    prevGpuRef.current = gpuData;
-
-    const now = Date.now();
+    const now = serversData.timestamp;
 
     const point: TimeSeriesPoint = {
       timestamp: now,
-      label: new Date().toLocaleTimeString("cs-CZ", {
+      label: new Date(now).toLocaleTimeString("cs-CZ", {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -48,7 +45,10 @@ export function useTimeSeries(
         currentTokens[id] = server.metrics.tokens_predicted_total;
         point[`${id}_requests`] = server.metrics.requests_processing;
       } else if (server.config.framework === "vllm-mlx" && server.vllm) {
-        const inflightGen = (server.vllm.requests ?? []).reduce((s, r) => s + (r.completion_tokens ?? 0), 0);
+        const inflightGen = (server.vllm.requests ?? []).reduce(
+          (s, r) => s + (r.completion_tokens ?? 0),
+          0
+        );
         currentTokens[id] = server.vllm.total_completion_tokens + inflightGen;
         point[`${id}_requests`] = server.vllm.num_running;
       }
@@ -71,9 +71,8 @@ export function useTimeSeries(
 
     prevRef.current = { timestamp: now, tokens: currentTokens };
 
-    historyRef.current = [...historyRef.current.slice(-(MAX_POINTS - 1)), point];
-    setTick((t) => t + 1);
+    setHistory((prev) => [...prev.slice(-(MAX_POINTS - 1)), point]);
   }, [serversData, gpuData]);
 
-  return historyRef.current;
+  return history;
 }

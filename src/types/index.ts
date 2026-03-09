@@ -4,6 +4,7 @@ export interface ServerConfig {
   port: number;
   framework: "llama.cpp" | "vllm-mlx";
   color: string;
+  modelId?: string;
 }
 
 export interface LlamaCppMetrics {
