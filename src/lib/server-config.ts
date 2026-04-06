@@ -50,9 +50,9 @@ export const SERVERS: ServerConfig[] = [
     color: "#a855f7",
   },
   {
-    id: "gemma4-26b-uncensored-mlx",
-    name: "Gemma-4-26B-A4B-Uncensored",
-    modelId: "gemma-4-26b-a4b-it-uncensored",
+    id: "gemma4-31b-uncensored-mlx",
+    name: "Gemma-4-31B-Uncensored-8bit",
+    modelId: "gemma-4-31B-uncensored-heretic",
     port: 1241,
     framework: "vllm-mlx",
     color: "#ef4444",
