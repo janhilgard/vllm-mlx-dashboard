@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ServerStatus, TimeSeriesPoint } from "@/types";
+import { ServerStatus, TimeSeriesPoint, VllmRequest } from "@/types";
 import type { ServerThroughput } from "@/hooks/use-realtime-throughput";
 import { StatusBadge } from "./status-badge";
 import { MetricValue } from "./metric-value";
@@ -165,6 +165,10 @@ function VllmMlxDetails({ vllm, throughput, history, serverId, color }: { vllm: 
         <MetricValue label="Prompt Tok." value={vllm.total_prompt_tokens} />
       </div>
 
+      {vllm.requests && vllm.requests.length > 0 && (
+        <RequestList requests={vllm.requests} />
+      )}
+
       {history && history.length > 1 && (
         <div className="space-y-2">
           <Sparkline data={history} dataKey={serverId} color={color} label="tok/s" />
@@ -223,6 +227,54 @@ function VllmMlxDetails({ vllm, throughput, history, serverId, color }: { vllm: 
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RequestList({ requests }: { requests: VllmRequest[] }) {
+  return (
+    <div className="space-y-1.5">
+      <span className="text-xs text-muted-foreground font-medium">
+        Active Requests ({requests.length})
+      </span>
+      {requests.map((req) => {
+        const pct = Math.min((req.progress ?? 0) * 100, 100);
+        const phaseColor =
+          req.phase === "generation"
+            ? "bg-emerald-500"
+            : req.phase === "prefill"
+              ? "bg-blue-500"
+              : "bg-muted-foreground";
+        return (
+          <div key={req.request_id} className="space-y-0.5">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-1.5 h-1.5 rounded-full ${phaseColor}`}
+                />
+                <span className="text-muted-foreground">{req.phase}</span>
+              </div>
+              <div className="flex items-center gap-2 font-mono tabular-nums">
+                {req.tokens_per_second != null && (
+                  <span>{req.tokens_per_second.toFixed(1)} tok/s</span>
+                )}
+                <span className="text-muted-foreground">
+                  {req.completion_tokens}/{req.max_tokens}
+                </span>
+                <span className="text-muted-foreground w-10 text-right">
+                  {pct.toFixed(0)}%
+                </span>
+              </div>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full ${phaseColor} transition-all duration-500`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

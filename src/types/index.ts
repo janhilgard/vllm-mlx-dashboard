@@ -29,7 +29,11 @@ export interface VllmRequest {
   phase: string;
   completion_tokens: number;
   prompt_tokens: number;
-  tokens_per_second: number;
+  max_tokens: number;
+  tokens_per_second: number | null;
+  progress: number;
+  elapsed_s: number;
+  ttft_s: number | null;
 }
 
 export interface VllmMlxStatus {
