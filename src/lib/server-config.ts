@@ -50,14 +50,6 @@ export const SERVERS: ServerConfig[] = [
     color: "#a855f7",
   },
   {
-    id: "gemma4-31b-uncensored-mlx",
-    name: "Gemma-4-31B-Uncensored-8bit",
-    modelId: "gemma-4-31B-uncensored-heretic",
-    port: 1241,
-    framework: "vllm-mlx",
-    color: "#ef4444",
-  },
-  {
     id: "rocinante-12b-mlx",
     name: "Rocinante-X-12B-v1-8bit",
     modelId: "/Users/janhilgard/mlx-models/Rocinante-X-12B-v1-mlx-8bit",
