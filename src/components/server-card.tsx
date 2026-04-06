@@ -52,7 +52,7 @@ export function ServerCard({ server, throughput, history }: ServerCardProps) {
         {config.framework === "llama.cpp" && online && metrics ? (
           <LlamaCppDetails metrics={metrics} slots={slots ?? []} throughput={throughput} history={history} serverId={config.id} color={config.color} />
         ) : config.framework === "vllm-mlx" && online && vllm ? (
-          <VllmMlxDetails vllm={vllm} history={history} serverId={config.id} color={config.color} />
+          <VllmMlxDetails vllm={vllm} throughput={throughput} history={history} serverId={config.id} color={config.color} />
         ) : !online ? (
           <p className="text-xs text-muted-foreground">Server unavailable</p>
         ) : null}
@@ -124,7 +124,7 @@ function formatUptime(seconds: number): string {
   return `${h}h ${m}m`;
 }
 
-function VllmMlxDetails({ vllm, history, serverId, color }: { vllm: NonNullable<ServerStatus["vllm"]>; history?: TimeSeriesPoint[]; serverId: string; color: string }) {
+function VllmMlxDetails({ vllm, throughput, history, serverId, color }: { vllm: NonNullable<ServerStatus["vllm"]>; throughput?: ServerThroughput; history?: TimeSeriesPoint[]; serverId: string; color: string }) {
   const hasFullStatus = vllm.uptime_s != null;
 
   if (!hasFullStatus) {
@@ -141,10 +141,15 @@ function VllmMlxDetails({ vllm, history, serverId, color }: { vllm: NonNullable<
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <MetricValue label="Uptime" value={formatUptime(vllm.uptime_s)} />
         <MetricValue
-          label="Requests"
-          value={vllm.total_requests_processed.toString()}
+          label="Generation"
+          value={throughput?.generation ?? 0}
+          suffix="tok/s"
+        />
+        <MetricValue
+          label="Prompt"
+          value={throughput?.prompt ?? 0}
+          suffix="tok/s"
         />
         <MetricValue
           label="Running"
