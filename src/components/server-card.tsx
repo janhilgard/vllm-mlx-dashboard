@@ -55,6 +55,8 @@ export function ServerCard({ server, throughput, history }: ServerCardProps) {
           <VllmMlxDetails vllm={vllm} throughput={throughput} history={history} serverId={config.id} color={config.color} />
         ) : !online ? (
           <p className="text-xs text-muted-foreground">Server unavailable</p>
+        ) : online ? (
+          <p className="text-xs text-muted-foreground">Waiting for data...</p>
         ) : null}
       </CardContent>
     </Card>
@@ -255,21 +257,34 @@ function RequestList({ requests }: { requests: VllmRequest[] }) {
                 <span className="text-muted-foreground">{req.phase}</span>
               </div>
               <div className="flex items-center gap-2 font-mono tabular-nums">
-                {req.tokens_per_second != null && (
-                  <span>{req.tokens_per_second.toFixed(1)} tok/s</span>
+                {req.phase === "prefill" ? (
+                  <>
+                    <span className="text-muted-foreground">
+                      {req.prompt_tokens > 0 ? `${req.prompt_tokens} tok` : ""}
+                    </span>
+                    <span className="text-muted-foreground w-10 text-right">
+                      {pct.toFixed(0)}%
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {req.tokens_per_second != null && (
+                      <span>{req.tokens_per_second.toFixed(1)} tok/s</span>
+                    )}
+                    <span className="text-muted-foreground">
+                      {req.completion_tokens}/{req.max_tokens}
+                    </span>
+                    <span className="text-muted-foreground w-10 text-right">
+                      {pct.toFixed(0)}%
+                    </span>
+                  </>
                 )}
-                <span className="text-muted-foreground">
-                  {req.completion_tokens}/{req.max_tokens}
-                </span>
-                <span className="text-muted-foreground w-10 text-right">
-                  {pct.toFixed(0)}%
-                </span>
               </div>
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 className={`h-full rounded-full ${phaseColor} transition-all duration-500`}
-                style={{ width: `${pct}%` }}
+                style={{ width: `${Math.max(pct, 1)}%` }}
               />
             </div>
           </div>
@@ -283,7 +298,18 @@ function CopyButton({ text, title }: { text: string; title?: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };

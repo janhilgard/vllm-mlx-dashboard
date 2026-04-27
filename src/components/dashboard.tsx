@@ -33,14 +33,24 @@ export function Dashboard() {
         (sum, s) => sum + (s.metrics?.tokens_predicted_total ?? 0),
         0
       ) + vllmServers.reduce(
-        (sum, s) => sum + (s.vllm?.total_completion_tokens ?? 0),
+        (sum, s) => {
+          const inflight = (s.vllm?.requests ?? []).reduce(
+            (rs, r) => rs + (r.completion_tokens ?? 0), 0
+          );
+          return sum + (s.vllm?.total_completion_tokens ?? 0) + inflight;
+        },
         0
       ),
       totalPromptTokens: llamacpp.reduce(
         (sum, s) => sum + (s.metrics?.prompt_tokens_total ?? 0),
         0
       ) + vllmServers.reduce(
-        (sum, s) => sum + (s.vllm?.total_prompt_tokens ?? 0),
+        (sum, s) => {
+          const inflight = (s.vllm?.requests ?? []).reduce(
+            (rs, r) => rs + (r.prompt_tokens ?? 0), 0
+          );
+          return sum + (s.vllm?.total_prompt_tokens ?? 0) + inflight;
+        },
         0
       ),
       activeRequests: llamacpp.reduce(

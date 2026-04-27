@@ -1,7 +1,16 @@
 import { ServerConfig, ServerStatus, SlotInfo, VllmMlxStatus } from "@/types";
 import { parsePrometheusMetrics } from "./prometheus-parser";
 
-const FETCH_TIMEOUT = 1500;
+const FETCH_TIMEOUT = 3000;
+const OFFLINE_THRESHOLD = 3;
+
+// Persist across Next.js dev mode hot reloads (module re-evaluation resets module-level state)
+const g = globalThis as unknown as {
+  __fetcherFailures?: Map<number, number>;
+  __fetcherLastVllm?: Map<number, VllmMlxStatus>;
+};
+const consecutiveFailures = (g.__fetcherFailures ??= new Map<number, number>());
+const lastVllmData = (g.__fetcherLastVllm ??= new Map<number, VllmMlxStatus>());
 
 function fetchWithTimeout(url: string, timeout = FETCH_TIMEOUT): Promise<Response> {
   const controller = new AbortController();
@@ -20,7 +29,15 @@ export async function fetchLlamaCppStatus(config: ServerConfig): Promise<ServerS
     fetchWithTimeout(`${base}/slots`).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
   ]);
 
-  const online = healthResult.status === "fulfilled";
+  let online: boolean;
+  if (healthResult.status === "fulfilled") {
+    consecutiveFailures.set(config.port, 0);
+    online = true;
+  } else {
+    const count = (consecutiveFailures.get(config.port) || 0) + 1;
+    consecutiveFailures.set(config.port, count);
+    online = count < OFFLINE_THRESHOLD;
+  }
 
   return {
     config,
@@ -45,16 +62,30 @@ export async function fetchVllmMlxStatus(config: ServerConfig): Promise<ServerSt
     fetchWithTimeout(`${base}/v1/status`).then((r) => r.json()),
   ]);
 
-  const online = healthResult.status === "fulfilled";
+  let online: boolean;
+  if (healthResult.status === "fulfilled") {
+    consecutiveFailures.set(config.port, 0);
+    online = true;
+  } else {
+    const count = (consecutiveFailures.get(config.port) || 0) + 1;
+    consecutiveFailures.set(config.port, count);
+    online = count < OFFLINE_THRESHOLD;
+  }
+
+  const vllm = statusResult.status === "fulfilled"
+    ? (statusResult.value as VllmMlxStatus)
+    : healthResult.status === "fulfilled"
+      ? (healthResult.value as VllmMlxStatus)
+      : undefined;
+
+  if (vllm) {
+    lastVllmData.set(config.port, vllm);
+  }
 
   return {
     config,
     online,
-    vllm: statusResult.status === "fulfilled"
-      ? (statusResult.value as VllmMlxStatus)
-      : healthResult.status === "fulfilled"
-        ? (healthResult.value as VllmMlxStatus)
-        : undefined,
+    vllm: vllm ?? (online ? lastVllmData.get(config.port) : undefined),
   };
 }
 

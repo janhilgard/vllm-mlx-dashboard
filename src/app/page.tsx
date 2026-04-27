@@ -7,7 +7,7 @@ export default function Home() {
         <header className="px-6 pt-6 pb-2">
           <h1 className="text-xl font-semibold">LLM Inference Monitor</h1>
           <p className="text-sm text-muted-foreground">
-            Mac Studio M3 Ultra &middot; 5 servers &middot; auto-refresh 2s
+            Mac Studio M3 Ultra &middot; 3 servers &middot; auto-refresh 2s
           </p>
         </header>
         <Dashboard />

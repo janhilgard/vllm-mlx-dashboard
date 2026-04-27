@@ -46,6 +46,8 @@ export interface VllmMlxStatus {
   total_requests_processed: number;
   total_prompt_tokens: number;
   total_completion_tokens: number;
+  generation_tps?: number;
+  prompt_tps?: number;
   metal: {
     active_memory_gb: number;
     peak_memory_gb: number;
