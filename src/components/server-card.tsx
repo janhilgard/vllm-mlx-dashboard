@@ -163,8 +163,8 @@ function VllmMlxDetails({ vllm, throughput, history, serverId, color }: { vllm: 
           value={vllm.num_waiting.toString()}
           highlight={vllm.num_waiting > 0}
         />
-        <MetricValue label="Completion Tok." value={vllm.total_completion_tokens} />
-        <MetricValue label="Prompt Tok." value={vllm.total_prompt_tokens} />
+        <MetricValue label="Completion Tok." value={vllm.total_completion_tokens + (vllm.requests ?? []).reduce((s, r) => s + (r.completion_tokens ?? 0), 0)} />
+        <MetricValue label="Prompt Tok." value={vllm.total_prompt_tokens + (vllm.requests ?? []).reduce((s, r) => s + (r.prompt_tokens ?? 0), 0)} />
       </div>
 
       {vllm.requests && vllm.requests.length > 0 && (
