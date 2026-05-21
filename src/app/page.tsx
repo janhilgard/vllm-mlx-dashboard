@@ -1,4 +1,4 @@
-import { Dashboard } from "@/components/dashboard";
+import { AppShell } from "@/components/app-shell";
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
             Mac Studio M3 Ultra &middot; 3 servers &middot; auto-refresh 2s
           </p>
         </header>
-        <Dashboard />
+        <AppShell />
       </div>
     </main>
   );
