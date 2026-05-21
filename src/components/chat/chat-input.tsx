@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, useCallback, useRef, KeyboardEvent, ClipboardEvent } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  KeyboardEvent,
+  ClipboardEvent,
+  DragEvent,
+} from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Send, Square, Paperclip, X } from "lucide-react";
 import { ChatAttachment } from "@/types/chat";
+import { cn } from "@/lib/utils";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
@@ -28,7 +36,9 @@ function readFileAsDataUrl(file: File): Promise<string> {
 export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
   const addFiles = useCallback(async (files: FileList | File[]) => {
     const toAdd: ChatAttachment[] = [];
@@ -85,9 +95,53 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files) {
+      if (e.target.files && e.target.files.length > 0) {
         addFiles(e.target.files);
-        e.target.value = "";
+      }
+      // Reset so the same file can be selected again
+      e.target.value = "";
+    },
+    [addFiles]
+  );
+
+  const handleAttachClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  // Drag & drop handlers
+  const handleDragEnter = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer?.types.includes("Files")) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragging(false);
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        addFiles(files);
       }
     },
     [addFiles]
@@ -96,7 +150,26 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
   const canSend = input.trim() || attachments.length > 0;
 
   return (
-    <div className="border-t">
+    <div
+      className={cn(
+        "border-t relative transition-colors",
+        isDragging && "bg-accent/50"
+      )}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-primary/50 bg-accent/30 pointer-events-none">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Paperclip className="h-5 w-5" />
+            Drop images here
+          </div>
+        </div>
+      )}
+
       {/* Attachment previews */}
       {attachments.length > 0 && (
         <div className="flex gap-2 px-4 pt-3 flex-wrap">
@@ -120,26 +193,26 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
       )}
 
       <div className="flex items-end gap-2 p-4">
-        {/* Hidden file input */}
+        {/* Hidden file input — use sr-only instead of hidden for browser compat */}
         <input
           ref={fileInputRef}
           type="file"
           accept={ACCEPTED_TYPES.join(",")}
           multiple
-          className="hidden"
           onChange={handleFileChange}
+          className="sr-only"
+          tabIndex={-1}
         />
 
-        {/* Attach button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => fileInputRef.current?.click()}
+        {/* Attach button — native button with explicit onClick */}
+        <button
+          type="button"
+          onClick={handleAttachClick}
           disabled={disabled || isStreaming}
-          className="shrink-0"
+          className="inline-flex items-center justify-center shrink-0 h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:pointer-events-none"
         >
           <Paperclip className="h-4 w-4" />
-        </Button>
+        </button>
 
         <Textarea
           value={input}
