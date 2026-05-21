@@ -2,9 +2,27 @@ import { SERVERS } from "@/lib/server-config";
 
 export const runtime = "nodejs";
 
+// Next.js App Router route handler body size limit
+export const maxDuration = 300; // 5 min for slow image processing
+
+async function parseBody(req: Request): Promise<Record<string, unknown>> {
+  // Read body as text to bypass default json size limit
+  const text = await req.text();
+  return JSON.parse(text);
+}
+
 export async function POST(req: Request) {
-  const { serverId, messages, maxTokens, temperature, topP, reasoning } =
-    await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await parseBody(req);
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "Invalid or too large request body" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const { serverId, messages, maxTokens, temperature, topP, reasoning } = body;
 
   const server = SERVERS.find((s) => s.id === serverId);
   if (!server) {
@@ -33,9 +51,12 @@ export async function POST(req: Request) {
         }),
       }),
     });
-  } catch {
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "";
     return new Response(
-      JSON.stringify({ error: `Server ${server.name} is not reachable` }),
+      JSON.stringify({
+        error: `Server ${server.name} is not reachable: ${detail}`,
+      }),
       { status: 502, headers: { "Content-Type": "application/json" } }
     );
   }

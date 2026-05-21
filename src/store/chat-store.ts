@@ -13,11 +13,10 @@ function buildApiContent(
   if (!attachments || attachments.length === 0) return content;
 
   const parts: ApiContentPart[] = [];
+  // Text part first (required by most vision models, even if empty)
+  parts.push({ type: "text", text: content || "What is in this image?" });
   for (const att of attachments) {
     parts.push({ type: "image_url", image_url: { url: att.dataUrl } });
-  }
-  if (content) {
-    parts.push({ type: "text", text: content });
   }
   return parts;
 }
