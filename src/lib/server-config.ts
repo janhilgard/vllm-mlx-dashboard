@@ -35,7 +35,7 @@ export const SERVERS: ServerConfig[] = [
     port: 8000,
     framework: "omlx",
     color: "#f59e0b",
-    role: "záloha 35B · silný model (Flash-Next, načte se jen při eskalaci codegenu)",
+    role: "nepoužívá se — zálohou i silným modelem je od 30. 9. Splash 27B",
   },
 
   // ---- Qwen3.6-35B / port 1237: služba zastavena 2026-08-19 (přechod na oMLX) ----
