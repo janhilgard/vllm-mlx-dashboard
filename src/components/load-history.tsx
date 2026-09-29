@@ -34,6 +34,10 @@ export function LoadHistory() {
     revalidateOnFocus: false,
   });
   const pts: LoadPoint[] = data?.points ?? [];
+  // Only engines that did something in this range: an idle fallback (oMLX)
+  // would draw two flat zero lines and two legend entries for nothing.
+  const aktivni = SERVERS.filter((s) =>
+    pts.some((p) => Number(p[`${s.id}_prompt` as keyof LoadPoint]) > 0 || Number(p[`${s.id}_gen` as keyof LoadPoint]) > 0));
 
   return (
     <Card>
@@ -90,14 +94,14 @@ export function LoadHistory() {
               <Line dataKey="waiting" name="waiting" stroke="#ef4444" strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
             </Chart>
 
-            <Chart title="Tokens per second by engine (prompt / generation)" data={pts}>
+            <Chart title="Tokens per second by engine (prompt solid / generation dashed)" data={pts}>
               <YAxis {...axis} width={42} />
-              {SERVERS.map((s) => (
-                <Line key={`${s.id}_prompt`} dataKey={`${s.id}_prompt`} name={`${s.name.split(" ")[0]} prompt`} stroke={s.color}
+              {aktivni.map((s) => (
+                <Line key={`${s.id}_prompt`} dataKey={`${s.id}_prompt`} name={`${kratce(s.name)} prompt`} stroke={s.color}
                       strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
               ))}
-              {SERVERS.map((s) => (
-                <Line key={`${s.id}_gen`} dataKey={`${s.id}_gen`} name={`${s.name.split(" ")[0]} gen`} stroke={s.color}
+              {aktivni.map((s) => (
+                <Line key={`${s.id}_gen`} dataKey={`${s.id}_gen`} name={`${kratce(s.name)} gen`} stroke={s.color}
                       strokeWidth={1} strokeDasharray="4 3" dot={false} isAnimationActive={false} connectNulls />
               ))}
             </Chart>
@@ -106,6 +110,13 @@ export function LoadHistory() {
       </CardContent>
     </Card>
   );
+}
+
+/** "Splash · Qwen3.6-35B-A3B" → "Splash 35B": both Splash instances used to
+ *  show up in the legend as just "Splash". */
+function kratce(name: string): string {
+  const m = name.match(/^(\S+).*?(\d+B)/);
+  return m ? `${m[1]} ${m[2]}` : name.split(" ")[0];
 }
 
 function Chart({ title, data, children }: { title: string; data: LoadPoint[]; children: React.ReactNode }) {

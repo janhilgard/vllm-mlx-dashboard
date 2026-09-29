@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { useServersData, useGpuData } from "@/hooks/use-dashboard-data";
 import { useTimeSeries } from "@/hooks/use-time-series";
 import { useRealtimeThroughput } from "@/hooks/use-realtime-throughput";
-import { SERVERS } from "@/lib/server-config";
 import { GlobalStats } from "./global-stats";
 import { ServerCard } from "./server-card";
 import { SplashCard } from "./splash-card";
@@ -12,8 +11,6 @@ import { OmlxCard } from "./omlx-card";
 import { SystemCard } from "./system-card";
 import { LoadHistory } from "./load-history";
 import { counters } from "@/lib/counters";
-import { GpuChart } from "./gpu-chart";
-import { ThroughputChart } from "./throughput-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function Dashboard() {
@@ -71,12 +68,10 @@ export function Dashboard() {
     <div className="space-y-4 p-6">
       <GlobalStats stats={aggregated} gpu={gpuData?.gpu} />
 
+      {/* One history card for the whole server. The former live "GPU load" and
+          "Throughput" cards showed the same series over the last few minutes
+          only while the page was open — the 1h range here covers that. */}
       <LoadHistory />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <GpuChart data={timeSeries} />
-        <ThroughputChart data={timeSeries} servers={SERVERS} />
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <SystemCard system={gpuData?.system} gpu={gpuData?.gpu} />
