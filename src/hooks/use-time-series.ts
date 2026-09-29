@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ServersResponse, GpuResponse, TimeSeriesPoint } from "@/types";
+import { counters } from "@/lib/counters";
 
 const MAX_POINTS = 60;
 
 interface PrevSnapshot {
   timestamp: number;
   tokens: Record<string, number>;
+  prompt: Record<string, number>;
 }
 
 export function useTimeSeries(
@@ -37,20 +39,17 @@ export function useTimeSeries(
     };
 
     const currentTokens: Record<string, number> = {};
+    const currentPrompt: Record<string, number> = {};
 
     for (const server of serversData.servers) {
       const id = server.config.id;
 
-      if (server.config.framework === "llama.cpp" && server.metrics) {
-        currentTokens[id] = server.metrics.tokens_predicted_total;
-        point[`${id}_requests`] = server.metrics.requests_processing;
-      } else if (server.config.framework === "vllm-mlx" && server.vllm) {
-        const inflightGen = (server.vllm.requests ?? []).reduce(
-          (s, r) => s + (r.completion_tokens ?? 0),
-          0
-        );
-        currentTokens[id] = server.vllm.total_completion_tokens + inflightGen;
-        point[`${id}_requests`] = server.vllm.num_running;
+      const c = counters(server);
+      if (c) {
+        currentTokens[id] = c.gen;
+        currentPrompt[id] = c.prompt;
+        point[`${id}_requests`] = c.running;
+        point[`${id}_waiting`] = c.waiting;
       }
 
       if (currentTokens[id] != null) {
@@ -60,16 +59,21 @@ export function useTimeSeries(
           if (prevTokens != null && dt > 0) {
             const delta = currentTokens[id] - prevTokens;
             point[id] = delta > 0 ? Math.round((delta / dt) * 10) / 10 : 0;
+            const prevPrompt = prevRef.current.prompt[id];
+            const dp = prevPrompt != null ? currentPrompt[id] - prevPrompt : 0;
+            point[`${id}_prompt`] = dp > 0 ? Math.round((dp / dt) * 10) / 10 : 0;
           } else {
             point[id] = 0;
+            point[`${id}_prompt`] = 0;
           }
         } else {
           point[id] = 0;
+          point[`${id}_prompt`] = 0;
         }
       }
     }
 
-    prevRef.current = { timestamp: now, tokens: currentTokens };
+    prevRef.current = { timestamp: now, tokens: currentTokens, prompt: currentPrompt };
 
     setHistory((prev) => [...prev.slice(-(MAX_POINTS - 1)), point]);
   }, [serversData, gpuData]);

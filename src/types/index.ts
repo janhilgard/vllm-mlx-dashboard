@@ -1,10 +1,17 @@
+export type Framework = "llama.cpp" | "vllm-mlx" | "omlx" | "splash";
+
 export interface ServerConfig {
   id: string;
   name: string;
   port: number;
-  framework: "llama.cpp" | "vllm-mlx";
+  framework: Framework;
   color: string;
   modelId?: string;
+  /** Name of the env var holding the bearer token the server requires
+   *  (read server-side only, never sent to the browser). */
+  apiKeyEnv?: string;
+  /** One-line role of the server, shown on its card. */
+  role?: string;
 }
 
 export interface LlamaCppMetrics {
@@ -63,8 +70,158 @@ export interface VllmMlxStatus {
     max_memory_mb: number;
     memory_utilization: number;
     entry_count: number;
-  };
+  } | null;
+  // SimpleEngine system-prompt KV snapshot (cross-request reuse of identical
+  // system prefixes). Null on BatchedEngine, which uses the `cache` block.
+  system_kv_cache?: {
+    enabled: boolean;
+    tokens: number;
+    hash: string | null;
+    memory_mb: number;
+    hits: number;
+    misses: number;
+    hit_rate: number;
+    tokens_saved: number;
+  } | null;
   requests: VllmRequest[];
+}
+
+/* ---------------- oMLX (multi-model MLX server, port 8000) ---------------- */
+
+export interface OmlxWaiting {
+  request_id: string;
+  queue_position: number;
+  elapsed_seconds: number;
+  prompt_tokens: number;
+}
+
+export interface OmlxPrefill {
+  request_id: string;
+  processed: number;
+  total: number;
+  speed: number;
+  eta: number | null;
+  elapsed: number;
+  phase: string;
+  cached_tokens?: number;
+}
+
+export interface OmlxGenerating {
+  request_id: string;
+  elapsed_seconds: number | null;
+  generated_tokens: number;
+  tokens_per_second: number;
+  last_activity_age_seconds: number | null;
+  prompt_tokens: number;
+  max_tokens: number | null;
+}
+
+export interface OmlxModel {
+  id: string;
+  size_bytes: number;
+  pinned: boolean;
+  is_loading: boolean;
+  loading_remaining_seconds: number | null;
+  active_requests: number;
+  waiting_requests: number;
+  idle_seconds: number | null;
+  ttl_remaining_seconds: number | null;
+  dflash: boolean;
+  waiting: OmlxWaiting[];
+  prefilling: OmlxPrefill[];
+  generating: OmlxGenerating[];
+  /** Prefix cache of this model (runtime_cache). */
+  cache: {
+    block_size: number;
+    indexed_blocks: number;
+    ssd_bytes: number;
+    ssd_max_bytes: number;
+    hot_bytes: number;
+    hot_max_bytes: number;
+  } | null;
+}
+
+export interface OmlxTotals {
+  requests: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  cached_tokens: number;
+  cache_efficiency: number;
+  avg_prefill_tps: number;
+  avg_generation_tps: number;
+  uptime_seconds: number;
+}
+
+export interface OmlxStatus {
+  models: OmlxModel[];
+  memory_used_bytes: number;
+  memory_max_bytes: number;
+  memory_soft_bytes: number | null;
+  memory_hard_bytes: number | null;
+  pressure: string;
+  total_active: number;
+  total_waiting: number;
+  session: OmlxTotals | null;
+  alltime: OmlxTotals | null;
+  /** Models installed but not loaded (id + size). */
+  available: { id: string; size_bytes: number }[];
+}
+
+/* --------------- Splash (DFlash2 engine, port 8001) --------------- */
+
+export interface SplashBatch {
+  width: number;
+  input_tokens: number;
+  output_tokens: number;
+  tokens_per_second: number;
+  wall_ms: number;
+}
+
+export interface SplashStatus {
+  ready: boolean;
+  model: string;
+  started_at: number | null;
+  max_context: number;
+  max_batch_width: number;
+  memory_pressure: string;
+  memory_current_bytes: number;
+  memory_peak_bytes: number;
+  memory_budget_bytes: number;
+  /** Where requests are right now. */
+  stages: {
+    http_active: number;
+    http_capacity: number;
+    preparing: number;
+    preparing_waiting: number;
+    queued: number;
+    admission_waiting: number;
+    waiting_memory: number;
+    waiting_prefix: number;
+    waiting_mask: number;
+    prefilling: number;
+    decoding: number;
+  };
+  requests: { submitted: number; completed: number; cancelled: number; failed: number };
+  /** Cumulative counters — rates come from their deltas. */
+  prefill_input_tokens: number;
+  prefill_wall_ms: number;
+  decode_output_tokens: number;
+  decode_wall_ms: number;
+  ttft_p50_ms: number | null;
+  ttft_p95_ms: number | null;
+  itl_p50_ms: number | null;
+  itl_p95_ms: number | null;
+  draft_acceptance: number | null;
+  drafted_tokens: number;
+  accepted_draft_tokens: number;
+  capacity_failures: number;
+  metal_failures: number;
+  current_prefill: SplashBatch | null;
+  current_decode: SplashBatch | null;
+  decode_width: Record<string, number>;
+  cache: { lookups: number; hits: number; hit_rate: number; reused_tokens: number; cold_misses: number };
+  kv: { pages_total: number; pages_active: number; pages_cache: number; cache_bytes: number };
+  transport_restarts: number;
 }
 
 export interface ServerStatus {
@@ -74,6 +231,9 @@ export interface ServerStatus {
   metrics?: LlamaCppMetrics;
   slots?: SlotInfo[];
   vllm?: VllmMlxStatus;
+  omlx?: OmlxStatus;
+  splash?: SplashStatus;
+  error?: string;
 }
 
 export interface GpuMetrics {
@@ -86,8 +246,29 @@ export interface ServersResponse {
   timestamp: number;
 }
 
+export interface ProcessInfo {
+  name: string;
+  pid: number;
+  cpu_percent: number;
+  rss_bytes: number;
+}
+
+export interface SystemMetrics {
+  memory_total_bytes: number;
+  memory_used_bytes: number;
+  memory_wired_bytes: number;
+  memory_compressed_bytes: number;
+  memory_cached_bytes: number;
+  swap_used_bytes: number;
+  swap_total_bytes: number;
+  load: [number, number, number];
+  cpu_count: number;
+  processes: ProcessInfo[];
+}
+
 export interface GpuResponse {
   gpu: GpuMetrics;
+  system?: SystemMetrics;
   timestamp: number;
 }
 

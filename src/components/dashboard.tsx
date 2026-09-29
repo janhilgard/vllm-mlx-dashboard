@@ -7,6 +7,10 @@ import { useRealtimeThroughput } from "@/hooks/use-realtime-throughput";
 import { SERVERS } from "@/lib/server-config";
 import { GlobalStats } from "./global-stats";
 import { ServerCard } from "./server-card";
+import { SplashCard } from "./splash-card";
+import { OmlxCard } from "./omlx-card";
+import { SystemCard } from "./system-card";
+import { counters } from "@/lib/counters";
 import { GpuChart } from "./gpu-chart";
 import { ThroughputChart } from "./throughput-chart";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,8 +24,9 @@ export function Dashboard() {
   const aggregated = useMemo(() => {
     if (!serversData) return null;
     const online = serversData.servers.filter((s) => s.online);
-    const llamacpp = online.filter((s) => s.metrics);
-    const vllmServers = online.filter((s) => s.vllm);
+    // One counter view per engine (lib/counters) — llama.cpp, vllm-mlx, oMLX
+    // and Splash report the same things under different names.
+    const c = online.map(counters).filter((x): x is NonNullable<typeof x> => x != null);
     return {
       onlineCount: online.length,
       totalCount: serversData.servers.length,
@@ -29,44 +34,10 @@ export function Dashboard() {
         (sum, s) => sum + (realtimeThroughput[s.config.id]?.generation ?? 0),
         0
       ),
-      totalTokens: llamacpp.reduce(
-        (sum, s) => sum + (s.metrics?.tokens_predicted_total ?? 0),
-        0
-      ) + vllmServers.reduce(
-        (sum, s) => {
-          const inflight = (s.vllm?.requests ?? []).reduce(
-            (rs, r) => rs + (r.completion_tokens ?? 0), 0
-          );
-          return sum + (s.vllm?.total_completion_tokens ?? 0) + inflight;
-        },
-        0
-      ),
-      totalPromptTokens: llamacpp.reduce(
-        (sum, s) => sum + (s.metrics?.prompt_tokens_total ?? 0),
-        0
-      ) + vllmServers.reduce(
-        (sum, s) => {
-          const inflight = (s.vllm?.requests ?? []).reduce(
-            (rs, r) => rs + (r.prompt_tokens ?? 0), 0
-          );
-          return sum + (s.vllm?.total_prompt_tokens ?? 0) + inflight;
-        },
-        0
-      ),
-      activeRequests: llamacpp.reduce(
-        (sum, s) => sum + (s.metrics?.requests_processing ?? 0),
-        0
-      ) + vllmServers.reduce(
-        (sum, s) => sum + (s.vllm?.num_running ?? 0),
-        0
-      ),
-      deferredRequests: llamacpp.reduce(
-        (sum, s) => sum + (s.metrics?.requests_deferred ?? 0),
-        0
-      ) + vllmServers.reduce(
-        (sum, s) => sum + (s.vllm?.num_waiting ?? 0),
-        0
-      ),
+      totalTokens: c.reduce((sum, x) => sum + x.gen, 0),
+      totalPromptTokens: c.reduce((sum, x) => sum + x.prompt, 0),
+      activeRequests: c.reduce((sum, x) => sum + x.running, 0),
+      deferredRequests: c.reduce((sum, x) => sum + x.waiting, 0),
       busySlots: serversData.servers.reduce(
         (sum, s) => sum + (s.slots?.filter((sl) => sl.is_processing).length ?? 0),
         0
@@ -105,14 +76,21 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {serversData?.servers.map((server) => (
-          <ServerCard
-            key={server.config.id}
-            server={server}
-            throughput={realtimeThroughput[server.config.id]}
-            history={timeSeries}
-          />
-        ))}
+        <SystemCard system={gpuData?.system} gpu={gpuData?.gpu} />
+        {serversData?.servers.map((server) =>
+          server.config.framework === "splash" ? (
+            <SplashCard key={server.config.id} server={server} history={timeSeries} timestamp={serversData.timestamp} />
+          ) : server.config.framework === "omlx" ? (
+            <OmlxCard key={server.config.id} server={server} throughput={realtimeThroughput[server.config.id]} history={timeSeries} />
+          ) : (
+            <ServerCard
+              key={server.config.id}
+              server={server}
+              throughput={realtimeThroughput[server.config.id]}
+              history={timeSeries}
+            />
+          )
+        )}
       </div>
     </div>
   );

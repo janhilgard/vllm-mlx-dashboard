@@ -199,7 +199,7 @@ function VllmMlxDetails({ vllm, throughput, history, serverId, color }: { vllm: 
 
       {vllm.cache && (
         <div className="space-y-1.5">
-          <span className="text-xs text-muted-foreground font-medium">KV Cache</span>
+          <span className="text-xs text-muted-foreground font-medium">Prefix Cache</span>
           <div className="flex items-center gap-2">
             <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
               <div
@@ -225,6 +225,47 @@ function VllmMlxDetails({ vllm, throughput, history, serverId, color }: { vllm: 
             <div>
               <span className="text-muted-foreground">Evict.</span>
               <span className="font-mono ml-1">{vllm.cache.evictions}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {vllm.system_kv_cache && (
+        <div className="space-y-1.5">
+          <span className="text-xs text-muted-foreground font-medium">
+            System KV Cache{!vllm.system_kv_cache.enabled && " (unsupported)"}
+          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-emerald-500"
+                style={{
+                  width: `${Math.min((vllm.system_kv_cache.hit_rate ?? 0) * 100, 100)}%`,
+                }}
+              />
+            </div>
+            <span className="text-xs font-mono whitespace-nowrap">
+              {((vllm.system_kv_cache.hit_rate ?? 0) * 100).toFixed(1)}%
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <span className="text-muted-foreground">Hits/Miss</span>
+              <span className="font-mono ml-1">
+                {vllm.system_kv_cache.hits}/{vllm.system_kv_cache.misses}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Saved</span>
+              <span className="font-mono ml-1">
+                {vllm.system_kv_cache.tokens_saved.toLocaleString()}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Size</span>
+              <span className="font-mono ml-1">
+                {vllm.system_kv_cache.tokens}t / {vllm.system_kv_cache.memory_mb.toFixed(0)}MB
+              </span>
             </div>
           </div>
         </div>

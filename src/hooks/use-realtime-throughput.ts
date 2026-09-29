@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { ServerStatus, ServersResponse } from "@/types";
+import { counters } from "@/lib/counters";
 
 export interface ServerThroughput {
   generation: number;
@@ -42,23 +43,15 @@ function getSnapshot() {
 }
 
 function getEffectiveTokens(server: ServerStatus): { gen: number; prompt: number } | null {
-  if (server.config.framework === "llama.cpp" && server.metrics) {
-    return { gen: server.metrics.tokens_predicted_total, prompt: server.metrics.prompt_tokens_total };
-  }
-  if (server.vllm) {
-    const reqs = server.vllm.requests ?? [];
-    const inflightGen = reqs.reduce((s, r) => s + (r.completion_tokens ?? 0), 0);
-    const inflightPrompt = reqs.reduce((s, r) => s + (r.prompt_tokens ?? 0), 0);
-    return {
-      gen: server.vllm.total_completion_tokens + inflightGen,
-      prompt: server.vllm.total_prompt_tokens + inflightPrompt,
-    };
-  }
-  return null;
+  const c = counters(server);
+  return c ? { gen: c.gen, prompt: c.prompt } : null;
 }
 
 /** Fallback: aggregate per-request tokens_per_second from running requests. */
 function getPerRequestTps(server: ServerStatus): number {
+  if (server.omlx) {
+    return server.omlx.models.reduce((s, m) => s + m.generating.reduce((g, r) => g + r.tokens_per_second, 0), 0);
+  }
   if (!server.vllm) return 0;
   const reqs = server.vllm.requests ?? [];
   return reqs.reduce((sum, r) => sum + (r.tokens_per_second ?? 0), 0);
