@@ -34,16 +34,9 @@ export function Dashboard() {
       ),
       totalTokens: c.reduce((sum, x) => sum + x.gen, 0),
       totalPromptTokens: c.reduce((sum, x) => sum + x.prompt, 0),
+      totalCachedTokens: c.reduce((sum, x) => sum + x.cached, 0),
       activeRequests: c.reduce((sum, x) => sum + x.running, 0),
       deferredRequests: c.reduce((sum, x) => sum + x.waiting, 0),
-      busySlots: serversData.servers.reduce(
-        (sum, s) => sum + (s.slots?.filter((sl) => sl.is_processing).length ?? 0),
-        0
-      ),
-      totalSlots: serversData.servers.reduce(
-        (sum, s) => sum + (s.slots?.length ?? 0),
-        0
-      ),
     };
   }, [serversData, realtimeThroughput]);
 

@@ -10,11 +10,11 @@ interface AggregatedStats {
   totalCount: number;
   totalThroughput: number;
   totalTokens: number;
+  /** Encoding tokens computed (prefill) and served from the prefix cache. */
   totalPromptTokens: number;
+  totalCachedTokens: number;
   activeRequests: number;
   deferredRequests: number;
-  busySlots: number;
-  totalSlots: number;
 }
 
 interface GlobalStatsProps {
@@ -32,8 +32,8 @@ export function GlobalStats({ stats, gpu }: GlobalStatsProps) {
         ? "text-red-400"
         : "text-amber-400";
 
-  const slotPercent =
-    stats.totalSlots > 0 ? (stats.busySlots / stats.totalSlots) * 100 : 0;
+  const encTotal = stats.totalPromptTokens + stats.totalCachedTokens;
+  const cachePct = encTotal > 0 ? (stats.totalCachedTokens / encTotal) * 100 : 0;
 
   return (
     <Card>
@@ -58,7 +58,22 @@ export function GlobalStats({ stats, gpu }: GlobalStatsProps) {
             </span>
           </StatBlock>
 
-          <StatBlock label="Prompt Tokens">
+          {/* Encoding (prompt) tokens since each engine started: total input,
+              the part matched in the prefix cache (free) and the part the GPU
+              had to compute — the computed part is what costs time. */}
+          <StatBlock label="Encoding tokens · total">
+            <span className="text-lg font-bold font-mono tabular-nums">
+              {formatNumber(encTotal)}
+            </span>
+          </StatBlock>
+
+          <StatBlock label={`cache match · ${cachePct.toFixed(0)} %`}>
+            <span className="text-lg font-bold font-mono tabular-nums text-emerald-400">
+              {formatNumber(stats.totalCachedTokens)}
+            </span>
+          </StatBlock>
+
+          <StatBlock label="computed (prefill)">
             <span className="text-lg font-bold font-mono tabular-nums">
               {formatNumber(stats.totalPromptTokens)}
             </span>
@@ -78,12 +93,6 @@ export function GlobalStats({ stats, gpu }: GlobalStatsProps) {
             >
               {stats.deferredRequests}
             </span>
-          </StatBlock>
-
-          <StatBlock label={`Slots (${stats.busySlots}/${stats.totalSlots})`}>
-            <div className="w-24">
-              <Progress value={slotPercent} className="h-2" />
-            </div>
           </StatBlock>
 
           <StatBlock label="GPU">
