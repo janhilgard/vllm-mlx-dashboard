@@ -27,7 +27,7 @@ export const SERVERS: ServerConfig[] = [
     role: "druhý soudce párů (veto před vydáním páru bez EANu)",
   },
   // ---- oMLX (více modelů naráz), od 29. 9. 2026 záloha za Splash ----
-  // Druhý soudce (Flash-Next) a silný model běží tady. Chat míří na 35B.
+  // Záloha 35B (při výpadku Splashe) a silný model pro eskalaci codegenu; druhý soudce je od 29. 9. na Splash 27B.
   {
     id: "omlx",
     name: "oMLX",

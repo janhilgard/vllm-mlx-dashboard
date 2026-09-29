@@ -23,6 +23,30 @@ export function OmlxCard({ server, throughput, history }: {
   const o = omlx;
   const busy = o ? o.total_active > 0 : false;
 
+  // oMLX is only the fallback now (and the codegen escalation model): most of
+  // the time nothing is loaded. Then the full card is a big empty box, so it
+  // collapses to one line — and expands by itself as soon as a model loads.
+  if (online && o && o.models.length === 0 && o.total_active === 0 && o.total_waiting === 0) {
+    return (
+      <Card className="relative overflow-hidden md:col-span-2 lg:col-span-3">
+        <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: config.color }} />
+        <CardContent className="flex flex-wrap items-center justify-between gap-2 py-3">
+          <div className="min-w-0">
+            <span className="text-sm font-medium">{config.name}</span>
+            <span className="ml-2 text-xs text-muted-foreground">
+              idle — no model loaded · {config.role}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">:{config.port}</Badge>
+            {o.session && <span className="text-xs text-muted-foreground">up {fmtDuration(o.session.uptime_seconds)}</span>}
+            <StatusBadge online={online} processing={false} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="relative overflow-hidden md:col-span-2 lg:col-span-3">
       <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: config.color }} />
