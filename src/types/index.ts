@@ -279,3 +279,42 @@ export interface TimeSeriesPoint {
   gpuPower: number | null;
   [serverId: string]: number | null | string;
 }
+
+/* ------------------ Load history (server-side sampler) ------------------ */
+
+export interface LoadSample {
+  t: number;
+  cpu: number | null;
+  gpu: number | null;
+  gpu_w: number | null;
+  mem_used: number | null;
+  mem_total: number | null;
+  swap_used: number | null;
+  load1: number | null;
+  engines: Record<string, { running: number; waiting: number; gen_tps: number | null; prompt_tps: number | null }>;
+}
+
+/** One bucket of the history chart: average and peak over the bucket. */
+export interface LoadPoint {
+  t: number;
+  label: string;
+  cpu: number | null; cpu_max: number | null;
+  gpu: number | null; gpu_max: number | null;
+  gpu_w: number | null;
+  mem_gb: number | null; swap_gb: number | null;
+  load1: number | null;
+  running: number | null; running_max: number | null;
+  waiting: number | null; waiting_max: number | null;
+  gen_tps: number | null; prompt_tps: number | null;
+  [engineKey: string]: number | null | string;
+}
+
+export interface LoadHistoryResponse {
+  points: LoadPoint[];
+  bucket_s: number;
+  samples: number;
+  mem_total_gb: number | null;
+  engines: string[];
+  from: number;
+  to: number;
+}

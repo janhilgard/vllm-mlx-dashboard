@@ -10,6 +10,7 @@ import { ServerCard } from "./server-card";
 import { SplashCard } from "./splash-card";
 import { OmlxCard } from "./omlx-card";
 import { SystemCard } from "./system-card";
+import { LoadHistory } from "./load-history";
 import { counters } from "@/lib/counters";
 import { GpuChart } from "./gpu-chart";
 import { ThroughputChart } from "./throughput-chart";
@@ -69,6 +70,8 @@ export function Dashboard() {
   return (
     <div className="space-y-4 p-6">
       <GlobalStats stats={aggregated} gpu={gpuData?.gpu} />
+
+      <LoadHistory />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <GpuChart data={timeSeries} />
