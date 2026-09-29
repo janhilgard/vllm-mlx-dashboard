@@ -1,5 +1,5 @@
-import { SERVERS } from "@/lib/server-config";
 import { authHeaders } from "@/lib/fetchers";
+import { resolveTarget } from "@/lib/chat-targets";
 
 export const runtime = "nodejs";
 
@@ -56,10 +56,20 @@ export async function POST(req: Request) {
 
   const { serverId, messages, maxTokens, temperature, topP, reasoning } = body;
 
-  const server = SERVERS.find((s) => s.id === serverId);
-  if (!server) {
-    return new Response(JSON.stringify({ error: "Unknown server" }), {
+  const target = await resolveTarget(serverId);
+  if (!target) {
+    return new Response(JSON.stringify({ error: "Unknown server or model" }), {
       status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const { server, model } = target;
+  // An unloaded oMLX model would be LOADED by the first request — on a public
+  // page that lets anyone evict the production models (the fallback 35B, the
+  // second judge). Loading stays an admin action.
+  if (!target.loaded) {
+    return new Response(JSON.stringify({ error: `Model ${model} is not loaded — load it in the oMLX admin first` }), {
+      status: 409,
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -97,7 +107,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders(server) },
       body: JSON.stringify({
-        model: server.modelId ?? server.name,
+        model,
         messages,
         max_tokens: Math.min(Number(maxTokens) || CHAT_MAX_TOKENS, CHAT_MAX_TOKENS),
         temperature: temperature ?? 0.7,
