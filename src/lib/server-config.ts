@@ -26,17 +26,18 @@ export const SERVERS: ServerConfig[] = [
     apiKeyEnv: "SPLASH_API_KEY",
     role: "druhý soudce párů (veto před vydáním páru bez EANu)",
   },
-  // ---- oMLX (více modelů naráz), od 29. 9. 2026 záloha za Splash ----
-  // Záloha 35B (při výpadku Splashe) a silný model pro eskalaci codegenu; druhý soudce je od 29. 9. na Splash 27B.
-  {
-    id: "omlx",
-    name: "oMLX",
-    modelId: "Qwen3.6-35B-A3B-UD-MLX-4bit",
-    port: 8000,
-    framework: "omlx",
-    color: "#f59e0b",
-    role: "nepoužívá se — zálohou i silným modelem je od 30. 9. Splash 27B",
-  },
+  // ---- oMLX: z monitoringu vyřazen 30. 9. 2026 (pokyn uživatele) ----
+  // Nepoužívá se — zálohou i silným modelem je Splash 27B (:8002).
+  // Obnovení = odkomentovat; karta, sampler i chat oMLX dál umí.
+  // {
+  //   id: "omlx",
+  //   name: "oMLX",
+  //   modelId: "Qwen3.6-35B-A3B-UD-MLX-4bit",
+  //   port: 8000,
+  //   framework: "omlx",
+  //   color: "#f59e0b",
+  //   role: "nepoužívá se — zálohou i silným modelem je od 30. 9. Splash 27B",
+  // },
 
   // ---- Qwen3.6-35B / port 1237: služba zastavena 2026-08-19 (přechod na oMLX) ----
   // Konfigurace ponechána; obnovení = odkomentovat + plutil RunAtLoad true + launchctl load
