@@ -14,6 +14,18 @@ export const SERVERS: ServerConfig[] = [
     apiKeyEnv: "SPLASH_API_KEY",
     role: "primární 35B pro produkci crawlu",
   },
+  // ---- Splash 27B, od 29. 9. 2026 druhý soudce (místo Flash-Next na oMLX) ----
+  // LaunchAgent ai.inco.splash27b, ~/splash-bench/splash27b-start.sh; jen text.
+  {
+    id: "splash27b",
+    name: "Splash · Qwen3.8-27B",
+    modelId: "unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL",
+    port: 8002,
+    framework: "splash",
+    color: "#06b6d4",
+    apiKeyEnv: "SPLASH_API_KEY",
+    role: "druhý soudce párů (veto před vydáním páru bez EANu)",
+  },
   // ---- oMLX (více modelů naráz), od 29. 9. 2026 záloha za Splash ----
   // Druhý soudce (Flash-Next) a silný model běží tady. Chat míří na 35B.
   {
@@ -23,7 +35,7 @@ export const SERVERS: ServerConfig[] = [
     port: 8000,
     framework: "omlx",
     color: "#f59e0b",
-    role: "záloha 35B · druhý soudce · silný model",
+    role: "záloha 35B · silný model (Flash-Next, načte se jen při eskalaci codegenu)",
   },
 
   // ---- Qwen3.6-35B / port 1237: služba zastavena 2026-08-19 (přechod na oMLX) ----
