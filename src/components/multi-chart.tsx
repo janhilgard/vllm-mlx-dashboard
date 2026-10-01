@@ -10,17 +10,28 @@ export interface Series {
 }
 
 /** Small multi-series line chart over the shared dashboard time series. */
-export function MultiChart({ data, series, title, height = 110 }: {
+export function MultiChart({ data, series, title, height = 110, average = false }: {
   data: TimeSeriesPoint[];
   series: Series[];
   title: string;
   height?: number;
+  /** Show the mean of each series over the visible window (incl. idle). */
+  average?: boolean;
 }) {
   const recent = data.slice(-60);
   if (recent.length < 2) return null;
+  const mean = (key: string) => {
+    const v = recent.map((p) => Number((p as unknown as Record<string, unknown>)[key])).filter((x) => Number.isFinite(x));
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
+  };
   return (
     <div className="space-y-1">
-      <span className="text-xs text-muted-foreground">{title}</span>
+      <span className="text-xs text-muted-foreground">
+        {title}
+        {average && series.map((s) => (
+          <span key={s.key} className="ml-2" style={{ color: s.color }}>ø {mean(s.key).toFixed(0)}</span>
+        ))}
+      </span>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={recent}>
           <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(0 0% 45%)" }} tickLine={false}

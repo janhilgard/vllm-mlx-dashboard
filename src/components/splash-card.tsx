@@ -99,8 +99,13 @@ export function SplashCard({ server, history, timestamp }: {
             </div>
 
             <div className="space-y-4">
-              <MultiChart data={history} title="Tokens per second (throughput)" series={[
+              {/* Encoding and decoding differ by an order of magnitude — on one
+                  axis the decoding line is flat. Separate charts, own scale,
+                  with the window mean (idle included) as the long-run rate. */}
+              <MultiChart data={history} title="Encoding tok/s (prefill)" average series={[
                 { key: `${config.id}_prompt`, name: "encoding", color: "#3b82f6" },
+              ]} />
+              <MultiChart data={history} title="Decoding tok/s (generation)" average series={[
                 { key: config.id, name: "decoding", color: "#22c55e" },
               ]} />
               <MultiChart data={history} title="Requests" height={90} series={[
