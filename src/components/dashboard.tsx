@@ -10,6 +10,7 @@ import { SplashCard } from "./splash-card";
 import { OmlxCard } from "./omlx-card";
 import { SystemCard } from "./system-card";
 import { LoadHistory } from "./load-history";
+import { LiveRequests } from "./live-requests";
 import { counters } from "@/lib/counters";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -60,6 +61,8 @@ export function Dashboard() {
   return (
     <div className="space-y-4 p-6">
       <GlobalStats stats={aggregated} gpu={gpuData?.gpu} />
+
+      <LiveRequests servers={serversData?.servers ?? []} timestamp={serversData?.timestamp} />
 
       {/* One history card for the whole server. The former live "GPU load" and
           "Throughput" cards showed the same series over the last few minutes
