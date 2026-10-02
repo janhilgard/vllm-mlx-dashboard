@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ServerStatus, SplashStatus, TimeSeriesPoint } from "@/types";
+import { ServerStatus, SplashActiveRequest, SplashStatus, TimeSeriesPoint } from "@/types";
 import { useWindowRate } from "@/hooks/use-window-rate";
+import { useRequestRates } from "@/hooks/use-request-rates";
 import { StatusBadge } from "./status-badge";
 import { MetricValue, formatNumber } from "./metric-value";
 import { MultiChart } from "./multi-chart";
@@ -35,6 +36,7 @@ export function SplashCard({ server, history, timestamp }: {
     timestamp,
   );
   const busy = s ? s.stages.prefilling + s.stages.decoding > 0 : false;
+  const requestRates = useRequestRates(s?.active_requests ?? null, timestamp);
 
   return (
     <Card className="relative overflow-hidden md:col-span-2 lg:col-span-3">
@@ -51,7 +53,7 @@ export function SplashCard({ server, history, timestamp }: {
           <Badge variant="outline" className="text-xs">:{config.port}</Badge>
           <Badge variant="secondary" className="text-xs">splash · DFlash2</Badge>
           {s && <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">{s.model}</code>}
-          {s?.started_at && <span className="text-xs text-muted-foreground">up {fmtDuration(Date.now() / 1000 - s.started_at)}</span>}
+          {s?.started_at && timestamp && <span className="text-xs text-muted-foreground">up {fmtDuration(timestamp / 1000 - s.started_at)}</span>}
         </div>
       </CardHeader>
       <CardContent>
@@ -64,6 +66,10 @@ export function SplashCard({ server, history, timestamp }: {
             <div className="space-y-4">
               <Section title="Request pipeline — now">
                 <Pipeline s={s} />
+              </Section>
+
+              <Section title="Requests — encoding progress">
+                <RequestProgress requests={s.active_requests} rates={requestRates} />
               </Section>
 
               <Section title="Running batches">
@@ -215,6 +221,60 @@ function DecodeWidths({ widths }: { widths: Record<string, number> }) {
           <span className="w-20 text-right font-mono tabular-nums">{formatNumber(v)} · {((v / total) * 100).toFixed(0)}%</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** A token count: whole below a thousand, then 1.2K / 3.4M. */
+const tok = (n: number) => (n >= 1_000 ? formatNumber(n) : String(Math.round(n)));
+
+const PHASE_STYLE: Record<string, string> = {
+  prefill: "bg-blue-500/20 text-blue-400",
+  decode: "bg-emerald-500/20 text-emerald-400",
+  queued: "bg-amber-500/20 text-amber-400",
+  waiting_resources: "bg-red-500/20 text-red-400",
+  waiting_prefix: "bg-amber-500/20 text-amber-400",
+  waiting_mask: "bg-amber-500/20 text-amber-400",
+};
+
+/**
+ * Each live request's prompt encoding: tokens encoded of its prompt (prefix-cache
+ * hits count as encoded), its encoding rate between the last two polls and the
+ * time left at that rate, then its generated tokens.
+ */
+function RequestProgress({ requests, rates }: {
+  requests: SplashActiveRequest[] | null;
+  rates: Map<number, number>;
+}) {
+  if (requests == null)
+    return <p className="text-xs text-muted-foreground">Not reported by this Splash build.</p>;
+  if (!requests.length) return <p className="text-xs text-muted-foreground">No requests.</p>;
+  const rows = requests.map((r) => ({ r, rate: rates.get(r.id) ?? 0 }));
+  return (
+    <div className="space-y-2">
+      {rows.map(({ r, rate }) => {
+        const pct = r.prompt_tokens ? (r.prompt_processed / r.prompt_tokens) * 100 : 0;
+        const encoding = r.prompt_processed < r.prompt_tokens;
+        const left = encoding && rate > 0 ? (r.prompt_tokens - r.prompt_processed) / rate : null;
+        return (
+          <div key={r.id} className="space-y-0.5">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="font-mono text-muted-foreground">#{r.id}</span>
+                <span className={`rounded px-1.5 py-0.5 ${PHASE_STYLE[r.phase] ?? "bg-muted text-muted-foreground"}`}>
+                  {r.phase.replace("_", " ")}
+                </span>
+              </span>
+              <span className="font-mono tabular-nums text-muted-foreground">
+                {encoding && rate > 0 ? `${rate.toFixed(0)} tok/s · ~${fmtDuration(left ?? 0)} left · ` : ""}
+                gen {tok(r.generated_tokens)}/{tok(r.max_new_tokens)} · {fmtDuration(r.age_ms / 1000)}
+              </span>
+            </div>
+            <Bar value={pct} color={encoding ? "bg-blue-500" : "bg-emerald-500"}
+                 label={`encoded ${tok(r.prompt_processed)} / ${tok(r.prompt_tokens)} tok · ${pct.toFixed(0)}%`} />
+          </div>
+        );
+      })}
     </div>
   );
 }

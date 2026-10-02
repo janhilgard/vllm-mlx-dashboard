@@ -69,7 +69,7 @@ function run(cmd: string, timeout = 4000): Promise<string> {
 const WATCHED: Array<[string, RegExp]> = [
   ["oMLX", /omlx-server|oMLX\.app\/Contents\/MacOS\/oMLX/],
   ["Splash engine", /splash serve-native/],
-  ["Splash server", /splash\/.*server\/server\.py/],
+  ["Splash server", /splash[\w-]*\/.*server\/server\.py/],
   ["monitoring", /next-server|next start/],
 ];
 

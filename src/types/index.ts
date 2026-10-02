@@ -177,6 +177,18 @@ export interface SplashBatch {
   wall_ms: number;
 }
 
+/** One live request on a Splash server (/status active_requests). */
+export interface SplashActiveRequest {
+  id: number;
+  phase: string;
+  prompt_tokens: number;
+  /** Prompt tokens already encoded, prefix-cache hits included. */
+  prompt_processed: number;
+  generated_tokens: number;
+  max_new_tokens: number;
+  age_ms: number;
+}
+
 export interface SplashStatus {
   ready: boolean;
   model: string;
@@ -218,6 +230,8 @@ export interface SplashStatus {
   metal_failures: number;
   current_prefill: SplashBatch | null;
   current_decode: SplashBatch | null;
+  /** Null when the server does not report its requests (Splash builds before 2 Oct 2026). */
+  active_requests: SplashActiveRequest[] | null;
   decode_width: Record<string, number>;
   cache: { lookups: number; hits: number; hit_rate: number; reused_tokens: number; cold_misses: number };
   kv: { pages_total: number; pages_active: number; pages_cache: number; cache_bytes: number };

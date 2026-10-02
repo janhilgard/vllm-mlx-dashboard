@@ -26,6 +26,19 @@ export const SERVERS: ServerConfig[] = [
     apiKeyEnv: "SPLASH_API_KEY",
     role: "druhý soudce párů (veto před vydáním páru bez EANu)",
   },
+  // ---- Splash Flash-Next, od 2. 10. 2026: Qwen3.8-Flash-Next s MTP, text + obrázky ----
+  // LaunchAgent ai.inco.splashflashnext, ~/splash-bench/splash-flashnext-start.sh,
+  // build z worktree ~/splash-flashnext (PR incoai/splash#253). Potřebuje ~118 GB.
+  {
+    id: "splashflashnext",
+    name: "Splash · Qwen3.8-Flash-Next",
+    modelId: "unsloth/Qwen3.8-Flash-Next-GGUF:UD-Q4_K_XL",
+    port: 8003,
+    framework: "splash",
+    color: "#a855f7",
+    apiKeyEnv: "SPLASH_API_KEY",
+    role: "Flash-Next s MTP (text + obrázky, tool calls)",
+  },
   // ---- oMLX: z monitoringu vyřazen 30. 9. 2026 (pokyn uživatele) ----
   // Nepoužívá se — zálohou i silným modelem je Splash 27B (:8002).
   // Obnovení = odkomentovat; karta, sampler i chat oMLX dál umí.
