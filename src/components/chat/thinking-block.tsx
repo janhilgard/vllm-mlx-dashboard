@@ -14,15 +14,16 @@ interface ThinkingBlockProps {
 }
 
 export function ThinkingBlock({ content, isStreaming }: ThinkingBlockProps) {
-  const [open, setOpen] = useState(true);
+  // Open while streaming; closes when streaming finishes (a block rendered
+  // after its stream starts closed).
+  const [open, setOpen] = useState(!!isStreaming);
+  const [wasStreaming, setWasStreaming] = useState(!!isStreaming);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-close when streaming finishes
-  useEffect(() => {
-    if (!isStreaming) {
-      setOpen(false);
-    }
-  }, [isStreaming]);
+  if (!!isStreaming !== wasStreaming) {
+    setWasStreaming(!!isStreaming);
+    setOpen(!!isStreaming);
+  }
 
   // Auto-scroll to bottom during streaming
   useEffect(() => {

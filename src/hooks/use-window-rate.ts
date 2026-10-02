@@ -1,12 +1,16 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
+
+type Sample<K extends string> = { t: number; v: Record<K, number> };
 
 /**
  * Rates from cumulative counters over a sliding window of recent polls.
  * Returns per-second rates of each counter, or null until two samples span
  * at least `minMs`. A counter that goes backwards (server restart) resets
- * the window instead of producing a negative rate.
+ * the window instead of producing a negative rate. Each new poll (a new
+ * `timestamp`) is added to the window while rendering, as React's "storing
+ * information from previous renders" pattern does.
  */
 export function useWindowRate<K extends string>(
   sample: Record<K, number> | null,
@@ -14,16 +18,18 @@ export function useWindowRate<K extends string>(
   windowMs = 20_000,
   minMs = 3_000,
 ): Record<K, number> | null {
-  const buf = useRef<Array<{ t: number; v: Record<K, number> }>>([]);
-  if (sample && timestamp) {
-    const last = buf.current[buf.current.length - 1];
-    if (!last || last.t !== timestamp) {
-      if (last && Object.keys(sample).some((k) => sample[k as K] < last.v[k as K])) buf.current = [];
-      buf.current.push({ t: timestamp, v: sample });
-      while (buf.current.length > 2 && timestamp - buf.current[0].t > windowMs) buf.current.shift();
-    }
+  const [window, setWindow] = useState<Sample<K>[]>([]);
+  const [seen, setSeen] = useState<number | undefined>(undefined);
+  let b = window;
+  if (sample && timestamp && timestamp !== seen) {
+    const last = b[b.length - 1];
+    const restarted = last && Object.keys(sample).some((k) => sample[k as K] < last.v[k as K]);
+    const next = [...(restarted ? [] : b), { t: timestamp, v: sample }];
+    while (next.length > 2 && timestamp - next[0].t > windowMs) next.shift();
+    setSeen(timestamp);
+    setWindow(next);
+    b = next;
   }
-  const b = buf.current;
   if (b.length < 2) return null;
   const first = b[0], lastS = b[b.length - 1];
   const dt = lastS.t - first.t;

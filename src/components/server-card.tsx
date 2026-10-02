@@ -120,12 +120,6 @@ function LlamaCppDetails({
   );
 }
 
-function formatUptime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m}m`;
-}
-
 function VllmMlxDetails({ vllm, throughput, history, serverId, color }: { vllm: NonNullable<ServerStatus["vllm"]>; throughput?: ServerThroughput; history?: TimeSeriesPoint[]; serverId: string; color: string }) {
   const hasFullStatus = vllm.uptime_s != null;
 

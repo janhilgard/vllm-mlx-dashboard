@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ServersResponse, GpuResponse, TimeSeriesPoint } from "@/types";
 import { counters } from "@/lib/counters";
 
@@ -16,15 +16,13 @@ export function useTimeSeries(
   serversData: ServersResponse | undefined,
   gpuData: GpuResponse | undefined
 ) {
+  // The series and the counters of the poll it last took. A new poll (a new
+  // serversData.timestamp) is taken while rendering, React's "storing
+  // information from previous renders" pattern.
   const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
-  const prevRef = useRef<PrevSnapshot | null>(null);
-  const lastProcessedRef = useRef<number>(0);
+  const [prev, setPrev] = useState<PrevSnapshot | null>(null);
 
-  useEffect(() => {
-    if (!serversData) return;
-    if (serversData.timestamp === lastProcessedRef.current) return;
-    lastProcessedRef.current = serversData.timestamp;
-
+  if (serversData && serversData.timestamp !== prev?.timestamp) {
     const now = serversData.timestamp;
 
     const point: TimeSeriesPoint = {
@@ -53,13 +51,13 @@ export function useTimeSeries(
       }
 
       if (currentTokens[id] != null) {
-        if (prevRef.current) {
-          const prevTokens = prevRef.current.tokens[id];
-          const dt = (now - prevRef.current.timestamp) / 1000;
+        if (prev) {
+          const prevTokens = prev.tokens[id];
+          const dt = (now - prev.timestamp) / 1000;
           if (prevTokens != null && dt > 0) {
             const delta = currentTokens[id] - prevTokens;
             point[id] = delta > 0 ? Math.round((delta / dt) * 10) / 10 : 0;
-            const prevPrompt = prevRef.current.prompt[id];
+            const prevPrompt = prev.prompt[id];
             const dp = prevPrompt != null ? currentPrompt[id] - prevPrompt : 0;
             point[`${id}_prompt`] = dp > 0 ? Math.round((dp / dt) * 10) / 10 : 0;
           } else {
@@ -73,10 +71,9 @@ export function useTimeSeries(
       }
     }
 
-    prevRef.current = { timestamp: now, tokens: currentTokens, prompt: currentPrompt };
-
-    setHistory((prev) => [...prev.slice(-(MAX_POINTS - 1)), point]);
-  }, [serversData, gpuData]);
+    setPrev({ timestamp: now, tokens: currentTokens, prompt: currentPrompt });
+    setHistory([...history.slice(-(MAX_POINTS - 1)), point]);
+  }
 
   return history;
 }
