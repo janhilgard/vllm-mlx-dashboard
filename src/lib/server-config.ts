@@ -16,18 +16,19 @@ export const SERVERS: ServerConfig[] = [
     apiKeyEnv: "SPLASH_API_KEY",
     role: "primární 35B pro produkci crawlu",
   },
-  // ---- Splash 27B, od 29. 9. 2026 druhý soudce (místo Flash-Next na oMLX) ----
-  // LaunchAgent ai.inco.splash27b, ~/splash-bench/splash27b-start.sh; jen text.
-  {
-    id: "splash27b",
-    name: "Splash · Qwen3.8-27B",
-    modelId: "unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL",
-    port: 8002,
-    framework: "splash",
-    color: "#06b6d4",
-    apiKeyEnv: "SPLASH_API_KEY",
-    role: "druhý soudce párů (veto před vydáním páru bez EANu)",
-  },
+  // ---- Splash 27B (:8002): VYPNUTO 2. 10. 2026 (rozhodnutí uživatele: 27B opuštěn) ----
+  // Druhý soudce, silný model i zálohu převzal Flash-Next (:8003). LaunchAgent
+  // ~/Library/LaunchAgents/ai.inco.splash27b.plist.vypnuto-20261002; obnovení = odkomentovat.
+  // {
+  //   id: "splash27b",
+  //   name: "Splash · Qwen3.8-27B",
+  //   modelId: "unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL",
+  //   port: 8002,
+  //   framework: "splash",
+  //   color: "#06b6d4",
+  //   apiKeyEnv: "SPLASH_API_KEY",
+  //   role: "druhý soudce párů (veto před vydáním páru bez EANu)",
+  // },
   // ---- Splash Flash-Next, od 2. 10. 2026: Qwen3.8-Flash-Next s MTP, text + obrázky ----
   // LaunchAgent ai.inco.splashflashnext, ~/splash-bench/splash-flashnext-start.sh,
   // build z worktree ~/splash-flashnext (PR incoai/splash#253). Potřebuje ~118 GB.
@@ -39,10 +40,10 @@ export const SERVERS: ServerConfig[] = [
     framework: "splash",
     color: "#a855f7",
     apiKeyEnv: "SPLASH_API_KEY",
-    role: "Flash-Next s MTP (text + obrázky, tool calls)",
+    role: "druhý soudce, silný model codegenu a záloha za 35B (od 2. 10. 2026)",
   },
   // ---- oMLX: z monitoringu vyřazen 30. 9. 2026 (pokyn uživatele) ----
-  // Nepoužívá se — zálohou i silným modelem je Splash 27B (:8002).
+  // Nepoužívá se — zálohou i silným modelem je od 2. 10. Splash Flash-Next (:8003).
   // Obnovení = odkomentovat; karta, sampler i chat oMLX dál umí.
   // {
   //   id: "omlx",
