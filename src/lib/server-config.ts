@@ -1,6 +1,8 @@
 import { ServerConfig } from "@/types";
 
 export const SERVERS: ServerConfig[] = [
+  // ---- Všechny Splash instance běží od 2. 10. 2026 z buildu worktree ~/splash-flashnext ----
+  // (hlásí /status active_requests); návrat na brew 1.1.0: ~/splash-bench/*.bak-brew.
   // ---- Splash (DFlash2), od 29. 9. 2026 primární engine pro Qwen3.6-35B ----
   // LaunchAgent ai.inco.splash, ~/splash-bench/splash-start.sh. Vyžaduje
   // bearer token: SPLASH_API_KEY v .env.local (čte se jen na serveru).
