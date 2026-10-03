@@ -16,11 +16,26 @@ const PHASE_STYLE: Record<string, string> = {
   waiting_mask: "bg-amber-500/20 text-amber-400",
 };
 
-const PRIORITY_STYLE: Record<string, string> = {
-  foreground: "bg-orange-500/20 text-orange-400",
-  normal: "bg-muted text-muted-foreground",
-  background: "bg-muted/50 text-muted-foreground/70",
+/** Solid colours, so a request's priority stands out from its phase. */
+export const PRIORITY_STYLE: Record<string, string> = {
+  foreground: "bg-orange-500 text-white",
+  normal: "bg-sky-600 text-white",
+  background: "bg-zinc-600 text-zinc-100",
 };
+
+/** A request's priority as its own badge; "priority ?" when the server does not report it. */
+export function PriorityBadge({ priority }: { priority: string | null }) {
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+        priority ? PRIORITY_STYLE[priority] ?? "bg-muted text-foreground" : "border border-dashed border-muted-foreground/40 text-muted-foreground"
+      }`}
+      title={priority ? `request priority: ${priority}` : "this Splash build does not report priorities"}
+    >
+      {priority ?? "priority ?"}
+    </span>
+  );
+}
 
 /** The key of a request in rate maps: request ids repeat across servers. */
 export const requestKey = (serverId: string, id: number) => `${serverId}:${id}`;
@@ -57,12 +72,7 @@ export function RequestRow({ row }: { row: RequestRowData }) {
           <span className={`rounded px-1.5 py-0.5 ${PHASE_STYLE[r.phase] ?? "bg-muted text-muted-foreground"}`}>
             {r.phase.replace("_", " ")}
           </span>
-          {r.priority && (
-            <span className={`rounded px-1.5 py-0.5 ${PRIORITY_STYLE[r.priority] ?? "bg-muted text-muted-foreground"}`}
-                  title="request priority">
-              {r.priority}
-            </span>
-          )}
+          <PriorityBadge priority={r.priority} />
         </span>
         <span className="font-mono tabular-nums text-muted-foreground shrink-0">
           {encoding && rate > 0 ? `${rate.toFixed(0)} tok/s · ~${fmtDuration(left ?? 0)} left · ` : ""}

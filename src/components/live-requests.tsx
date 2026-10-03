@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServerStatus } from "@/types";
 import { useRequestRates } from "@/hooks/use-request-rates";
-import { RequestList, RequestRowData, requestKey } from "./request-progress";
+import { PRIORITY_STYLE, RequestList, RequestRowData, requestKey } from "./request-progress";
 
 /**
  * Every live request on every Splash server in one list, each with its
@@ -34,8 +34,16 @@ export function LiveRequests({ servers, timestamp }: { servers: ServerStatus[]; 
           <CardTitle className="text-sm font-medium">Live requests</CardTitle>
           <span className="text-xs text-muted-foreground font-mono tabular-nums">
             {rows.length} running · {count("prefill")} encoding · {count("decode")} decoding · {waiting} waiting
-            {priorities.length > 0 && ` · ${priorities.map(([p, n]) => `${n} ${p}`).join(" · ")}`}
           </span>
+          {priorities.length > 0 && (
+            <span className="flex gap-1.5">
+              {priorities.map(([p, n]) => (
+                <span key={p} className={`rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${PRIORITY_STYLE[p]}`}>
+                  {p} {n}
+                </span>
+              ))}
+            </span>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
