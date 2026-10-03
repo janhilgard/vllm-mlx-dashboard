@@ -16,6 +16,12 @@ const PHASE_STYLE: Record<string, string> = {
   waiting_mask: "bg-amber-500/20 text-amber-400",
 };
 
+const PRIORITY_STYLE: Record<string, string> = {
+  foreground: "bg-orange-500/20 text-orange-400",
+  normal: "bg-muted text-muted-foreground",
+  background: "bg-muted/50 text-muted-foreground/70",
+};
+
 /** The key of a request in rate maps: request ids repeat across servers. */
 export const requestKey = (serverId: string, id: number) => `${serverId}:${id}`;
 
@@ -29,7 +35,7 @@ export interface RequestRowData {
 }
 
 /**
- * One live request: its phase, prompt tokens encoded (prefix-cache hits count
+ * One live request: its phase and priority, prompt tokens encoded (prefix-cache hits count
  * as encoded), encoding rate and time left at that rate, generated tokens and age.
  */
 export function RequestRow({ row }: { row: RequestRowData }) {
@@ -51,6 +57,12 @@ export function RequestRow({ row }: { row: RequestRowData }) {
           <span className={`rounded px-1.5 py-0.5 ${PHASE_STYLE[r.phase] ?? "bg-muted text-muted-foreground"}`}>
             {r.phase.replace("_", " ")}
           </span>
+          {r.priority && (
+            <span className={`rounded px-1.5 py-0.5 ${PRIORITY_STYLE[r.priority] ?? "bg-muted text-muted-foreground"}`}
+                  title="request priority">
+              {r.priority}
+            </span>
+          )}
         </span>
         <span className="font-mono tabular-nums text-muted-foreground shrink-0">
           {encoding && rate > 0 ? `${rate.toFixed(0)} tok/s · ~${fmtDuration(left ?? 0)} left · ` : ""}

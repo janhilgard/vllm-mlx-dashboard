@@ -22,6 +22,9 @@ export function LiveRequests({ servers, timestamp }: { servers: ServerStatus[]; 
   const rows: RequestRowData[] = live.map((r) => ({ ...r, rate: rates.get(r.key) ?? 0 }));
   const count = (phase: string) => rows.filter((r) => r.request.phase === phase).length;
   const waiting = rows.length - count("prefill") - count("decode");
+  const priorities = ["foreground", "normal", "background"]
+    .map((p) => [p, rows.filter((r) => r.request.priority === p).length] as const)
+    .filter(([, n]) => n > 0);
   const unreported = servers.filter((s) => s.config.framework === "splash" && s.online && s.splash && s.splash.active_requests == null);
 
   return (
@@ -31,6 +34,7 @@ export function LiveRequests({ servers, timestamp }: { servers: ServerStatus[]; 
           <CardTitle className="text-sm font-medium">Live requests</CardTitle>
           <span className="text-xs text-muted-foreground font-mono tabular-nums">
             {rows.length} running · {count("prefill")} encoding · {count("decode")} decoding · {waiting} waiting
+            {priorities.length > 0 && ` · ${priorities.map(([p, n]) => `${n} ${p}`).join(" · ")}`}
           </span>
         </div>
       </CardHeader>

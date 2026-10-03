@@ -271,6 +271,7 @@ export async function fetchSplashStatus(config: ServerConfig): Promise<ServerSta
     active_requests: Array.isArray(d.active_requests)
       ? (d.active_requests as Rec[]).map((r) => ({
           id: num(r.id), phase: String(r.phase ?? "?"),
+          priority: typeof r.priority === "string" ? r.priority : null,
           prompt_tokens: num(r.prompt_tokens), prompt_processed: num(r.prompt_processed),
           generated_tokens: num(r.generated_tokens), max_new_tokens: num(r.max_new_tokens), age_ms: num(r.age_ms),
         }))

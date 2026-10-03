@@ -181,6 +181,8 @@ export interface SplashBatch {
 export interface SplashActiveRequest {
   id: number;
   phase: string;
+  /** foreground, normal or background; null from builds that do not report it. */
+  priority: string | null;
   prompt_tokens: number;
   /** Prompt tokens already encoded, prefix-cache hits included. */
   prompt_processed: number;
