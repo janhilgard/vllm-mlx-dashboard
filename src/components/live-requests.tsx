@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServerStatus } from "@/types";
 import { useRequestRates } from "@/hooks/use-request-rates";
-import { PRIORITY_STYLE, RequestList, RequestRowData, requestKey } from "./request-progress";
+import { KIND_STYLE, PRIORITY_STYLE, RequestList, RequestRowData, requestKey, requestKind } from "./request-progress";
 
 /**
  * Every live request on every Splash server in one list, each with its
@@ -25,6 +25,9 @@ export function LiveRequests({ servers, timestamp }: { servers: ServerStatus[]; 
   const priorities = ["foreground", "normal", "background"]
     .map((p) => [p, rows.filter((r) => r.request.priority === p).length] as const)
     .filter(([, n]) => n > 0);
+  const kinds = ["decision", "text"]
+    .map((k) => [k, rows.filter((r) => requestKind(r.request) === k).length] as const)
+    .filter(([, n]) => n > 0);
   const unreported = servers.filter((s) => s.config.framework === "splash" && s.online && s.splash && s.splash.active_requests == null);
 
   return (
@@ -35,6 +38,15 @@ export function LiveRequests({ servers, timestamp }: { servers: ServerStatus[]; 
           <span className="text-xs text-muted-foreground font-mono tabular-nums">
             {rows.length} running · {count("prefill")} encoding · {count("decode")} decoding · {waiting} waiting
           </span>
+          {kinds.length > 0 && (
+            <span className="flex gap-1.5">
+              {kinds.map(([k, n]) => (
+                <span key={k} className={`rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${KIND_STYLE[k]}`}>
+                  {k} {n}
+                </span>
+              ))}
+            </span>
+          )}
           {priorities.length > 0 && (
             <span className="flex gap-1.5">
               {priorities.map(([p, n]) => (

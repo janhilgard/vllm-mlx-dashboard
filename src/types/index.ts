@@ -189,6 +189,11 @@ export interface SplashActiveRequest {
   generated_tokens: number;
   max_new_tokens: number;
   age_ms: number;
+  /**
+   * "decision" (POST /v1/score or /v1/decisions) or "text" (generation) when the server
+   * reports it; otherwise derived from max_new_tokens, which a score request leaves at 0.
+   */
+  kind?: string | null;
 }
 
 export interface SplashStatus {

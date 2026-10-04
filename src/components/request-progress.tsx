@@ -37,6 +37,35 @@ export function PriorityBadge({ priority }: { priority: string | null }) {
   );
 }
 
+/** Solid colours, distinct from the priorities'. */
+export const KIND_STYLE: Record<string, string> = {
+  decision: "bg-violet-600 text-white",
+  text: "bg-teal-600 text-white",
+};
+
+/**
+ * What a request is: a decision (a prefill-only score request, POST /v1/score or
+ * /v1/decisions) or a text request that generates. The server's own kind wins; a score
+ * request is the only one with no output budget.
+ */
+export function requestKind(r: SplashActiveRequest): string {
+  return r.kind ?? (r.max_new_tokens === 0 ? "decision" : "text");
+}
+
+/** A request's kind as its own badge. */
+export function KindBadge({ kind }: { kind: string }) {
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+        KIND_STYLE[kind] ?? "bg-muted text-foreground"
+      }`}
+      title={kind === "decision" ? "decision: prefill-only scoring, no generated text" : `request kind: ${kind}`}
+    >
+      {kind}
+    </span>
+  );
+}
+
 /** The key of a request in rate maps: request ids repeat across servers. */
 export const requestKey = (serverId: string, id: number) => `${serverId}:${id}`;
 
@@ -50,11 +79,12 @@ export interface RequestRowData {
 }
 
 /**
- * One live request: its phase and priority, prompt tokens encoded (prefix-cache hits count
- * as encoded), encoding rate and time left at that rate, generated tokens and age.
+ * One live request: its phase, kind and priority, prompt tokens encoded (prefix-cache hits
+ * count as encoded), encoding rate and time left at that rate, generated tokens and age.
  */
 export function RequestRow({ row }: { row: RequestRowData }) {
   const { request: r, rate, server } = row;
+  const kind = requestKind(r);
   const pct = r.prompt_tokens ? (r.prompt_processed / r.prompt_tokens) * 100 : 0;
   const encoding = r.prompt_processed < r.prompt_tokens;
   const left = encoding && rate > 0 ? (r.prompt_tokens - r.prompt_processed) / rate : null;
@@ -72,11 +102,13 @@ export function RequestRow({ row }: { row: RequestRowData }) {
           <span className={`rounded px-1.5 py-0.5 ${PHASE_STYLE[r.phase] ?? "bg-muted text-muted-foreground"}`}>
             {r.phase.replace("_", " ")}
           </span>
+          <KindBadge kind={kind} />
           <PriorityBadge priority={r.priority} />
         </span>
         <span className="font-mono tabular-nums text-muted-foreground shrink-0">
           {encoding && rate > 0 ? `${rate.toFixed(0)} tok/s · ~${fmtDuration(left ?? 0)} left · ` : ""}
-          gen {tok(r.generated_tokens)}/{tok(r.max_new_tokens)} · {fmtDuration(r.age_ms / 1000)}
+          {kind === "decision" ? "" : `gen ${tok(r.generated_tokens)}/${tok(r.max_new_tokens)} · `}
+          {fmtDuration(r.age_ms / 1000)}
         </span>
       </div>
       <Bar value={pct} color={encoding ? "bg-blue-500" : "bg-emerald-500"}
