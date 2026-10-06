@@ -1,8 +1,8 @@
 import { ServerConfig } from "@/types";
 
 export const SERVERS: ServerConfig[] = [
-  // ---- Všechny Splash instance běží od 2. 10. 2026 z buildu worktree ~/splash-flashnext ----
-  // (hlásí /status active_requests); návrat na brew 1.1.0: ~/splash-bench/*.bak-brew.
+  // ---- Všechny Splash instance běží od 6. 10. 2026 z buildu worktree ~/splash-next3 ----
+  // (main 3c4166b + PR #295, #255, #253; hlásí /status active_requests); návrat: ~/splash-bench/*.bak-*.
   // ---- Splash (DFlash2), od 29. 9. 2026 primární engine pro Qwen3.6-35B ----
   // LaunchAgent ai.inco.splash, ~/splash-bench/splash-start.sh. Vyžaduje
   // bearer token: SPLASH_API_KEY v .env.local (čte se jen na serveru).
@@ -16,19 +16,20 @@ export const SERVERS: ServerConfig[] = [
     apiKeyEnv: "SPLASH_API_KEY",
     role: "primární 35B pro produkci crawlu",
   },
-  // ---- Splash 27B (:8002): VYPNUTO 2. 10. 2026 (rozhodnutí uživatele: 27B opuštěn) ----
-  // Druhý soudce, silný model i zálohu převzal Flash-Next (:8003). LaunchAgent
-  // ~/Library/LaunchAgents/ai.inco.splash27b.plist.vypnuto-20261002; obnovení = odkomentovat.
-  // {
-  //   id: "splash27b",
-  //   name: "Splash · Qwen3.8-27B",
-  //   modelId: "unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL",
-  //   port: 8002,
-  //   framework: "splash",
-  //   color: "#06b6d4",
-  //   apiKeyEnv: "SPLASH_API_KEY",
-  //   role: "druhý soudce párů (veto před vydáním páru bez EANu)",
-  // },
+  // ---- Splash 27B ThinkingCap (:8002), od 6. 10. 2026: tool calling ----
+  // LaunchAgent ai.inco.splash27b, ~/splash-bench/splash27b-start.sh: bottlecapai GGUF Q4_K_M,
+  // draft DFlash2, text + obrázky, --max-memory 32G (35B 52G + Flash-Next 136G + 27B 32G = 220G).
+  // Vlastní id, aby se nemíchal s historií unsloth 27B (splash27b), vypnutého 2. 10. 2026.
+  {
+    id: "splashthinkingcap",
+    name: "Splash · ThinkingCap 27B",
+    modelId: "bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q4_K_M",
+    port: 8002,
+    framework: "splash",
+    color: "#06b6d4",
+    apiKeyEnv: "SPLASH_API_KEY",
+    role: "tool calling (Qwen3.8-27B ThinkingCap, od 6. 10. 2026)",
+  },
   // ---- Splash Flash-Next, od 2. 10. 2026: Qwen3.8-Flash-Next s MTP, text + obrázky ----
   // LaunchAgent ai.inco.splashflashnext, ~/splash-bench/splash-flashnext-start.sh,
   // build z worktree ~/splash-flashnext (PR incoai/splash#253). Potřebuje ~118 GB.
