@@ -17,18 +17,19 @@ export const SERVERS: ServerConfig[] = [
     role: "primární 35B pro produkci crawlu",
   },
   // ---- Splash 27B ThinkingCap (:8002), od 6. 10. 2026: tool calling ----
-  // LaunchAgent ai.inco.splash27b, ~/splash-bench/splash27b-start.sh: bottlecapai GGUF Q4_K_M,
-  // draft DFlash2, text + obrázky, --max-memory 32G (35B 52G + Flash-Next 136G + 27B 32G = 220G).
+  // LaunchAgent ai.inco.splash27b, ~/splash-bench/splash27b-start.sh. Od 8. 10. 2026 ThinkingCap Uncensored
+  // Heretic (OS-Software GGUF Q6_K; do té doby bottlecapai Q4_K_M), draft DFlash2, text + obrázky,
+  // --max-memory 36G (35B 52G + Flash-Next 136G + 27B 36G = 224G). Staré ID modelu server dál přijímá.
   // Vlastní id, aby se nemíchal s historií unsloth 27B (splash27b), vypnutého 2. 10. 2026.
   {
     id: "splashthinkingcap",
-    name: "Splash · ThinkingCap 27B",
-    modelId: "bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q4_K_M",
+    name: "Splash · ThinkingCap 27B Heretic",
+    modelId: "OS-Software/ThinkingCap-Qwen3.8-27B-Uncensored-Heretic-GGUF:Q6_K",
     port: 8002,
     framework: "splash",
     color: "#06b6d4",
     apiKeyEnv: "SPLASH_API_KEY",
-    role: "tool calling (Qwen3.8-27B ThinkingCap, od 6. 10. 2026)",
+    role: "tool calling (Qwen3.8-27B ThinkingCap Uncensored Heretic Q6_K, od 8. 10. 2026)",
   },
   // ---- Splash Flash-Next, od 2. 10. 2026: Qwen3.8-Flash-Next s MTP, text + obrázky ----
   // LaunchAgent ai.inco.splashflashnext, ~/splash-bench/splash-flashnext-start.sh,
