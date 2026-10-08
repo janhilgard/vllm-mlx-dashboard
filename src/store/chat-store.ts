@@ -25,13 +25,20 @@ export interface ChatSettings {
   maxTokens: number;
   temperature: number;
   topP: number;
+  topK: number;
+  minP: number;
   reasoning: boolean;
 }
 
-const DEFAULT_SETTINGS: ChatSettings = {
+// Sampling for good Czech (measured on ThinkingCap 27B Heretic, 8 Oct 2026):
+// min_p drops the improbable tail where invented words and wrong word forms
+// come from; a lower temperature does the rest.
+export const DEFAULT_SETTINGS: ChatSettings = {
   maxTokens: 16384,
-  temperature: 0.7,
-  topP: 0.95,
+  temperature: 0.6,
+  topP: 0.9,
+  topK: 20,
+  minP: 0.1,
   reasoning: true,
 };
 
@@ -120,6 +127,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           maxTokens: settings.maxTokens,
           temperature: settings.temperature,
           topP: settings.topP,
+          topK: settings.topK,
+          minP: settings.minP,
           reasoning: settings.reasoning,
         }),
         signal: controller.signal,

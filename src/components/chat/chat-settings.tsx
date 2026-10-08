@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useChatStore, ChatSettings } from "@/store/chat-store";
+import { useChatStore, DEFAULT_SETTINGS } from "@/store/chat-store";
 
 const MAX_TOKENS_OPTIONS = [1024, 2048, 4096, 8192, 16384, 32768];
 
@@ -98,6 +98,50 @@ export function ChatSettingsPopover() {
             </div>
           </div>
 
+          {/* Top K */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Top K</Label>
+              <span className="text-xs text-muted-foreground font-mono">
+                {settings.topK === 0 ? "off" : settings.topK}
+              </span>
+            </div>
+            <Slider
+              value={[settings.topK]}
+              onValueChange={([v]) => setSettings({ topK: Math.round(v) })}
+              min={0}
+              max={100}
+              step={1}
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>0 (off)</span>
+              <span>100</span>
+            </div>
+          </div>
+
+          {/* Min P */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Min P</Label>
+              <span className="text-xs text-muted-foreground font-mono">
+                {settings.minP.toFixed(2)}
+              </span>
+            </div>
+            <Slider
+              value={[settings.minP]}
+              onValueChange={([v]) =>
+                setSettings({ minP: Math.round(v * 100) / 100 })
+              }
+              min={0}
+              max={0.5}
+              step={0.01}
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>0 (off)</span>
+              <span>0.5 (strict)</span>
+            </div>
+          </div>
+
           {/* Reasoning */}
           <div className="flex items-center justify-between">
             <div>
@@ -119,14 +163,7 @@ export function ChatSettingsPopover() {
             variant="ghost"
             size="sm"
             className="w-full text-xs"
-            onClick={() =>
-              setSettings({
-                maxTokens: 16384,
-                temperature: 0.7,
-                topP: 0.95,
-                reasoning: true,
-              } satisfies ChatSettings)
-            }
+            onClick={() => setSettings(DEFAULT_SETTINGS)}
           >
             Reset to defaults
           </Button>

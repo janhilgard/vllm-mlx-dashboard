@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { serverId, messages, maxTokens, temperature, topP, reasoning } = body;
+  const { serverId, messages, maxTokens, temperature, topP, topK, minP, reasoning } = body;
 
   const target = await resolveTarget(serverId);
   if (!target) {
@@ -110,8 +110,10 @@ export async function POST(req: Request) {
         model,
         messages,
         max_tokens: Math.min(Number(maxTokens) || CHAT_MAX_TOKENS, CHAT_MAX_TOKENS),
-        temperature: temperature ?? 0.7,
-        top_p: topP ?? 0.95,
+        temperature: temperature ?? 0.6,
+        top_p: topP ?? 0.9,
+        top_k: Number.isInteger(topK) && (topK as number) >= 0 ? topK : 20,
+        min_p: typeof minP === "number" && minP >= 0 && minP <= 1 ? minP : 0.1,
         stream: true,
         ...(splash
           ? { reasoning_effort: reasoning === false ? "none" : "medium" }
