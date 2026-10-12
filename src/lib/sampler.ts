@@ -5,17 +5,17 @@ import { SERVERS } from "@/lib/server-config";
 import { fetchServerStatus } from "@/lib/fetchers";
 import { counters } from "@/lib/counters";
 import { getGpuMetrics, getSystemMetrics } from "@/lib/gpu-metrics";
-import type { LoadSample } from "@/types";
+import type { GpuMetrics, LoadSample, ThermalSample } from "@/types";
 
 /**
  * SERVER-SIDE LOAD HISTORY. The charts in the browser only cover the time the
  * page has been open; "how busy is the server over the day" needs a sampler
  * that runs whether anyone looks or not. Started once from `instrumentation.ts`.
  *
- * Every SAMPLE_MS: CPU (iostat, 1 s window), GPU utilisation and power
- * (powermetrics), memory and swap, load average, and per engine the running /
- * waiting requests and tok/s (delta of cumulative counters since the previous
- * sample). Stored as one NDJSON file per UTC day under `data/`, kept KEEP_DAYS.
+ * Every SAMPLE_MS: CPU (iostat, 1 s window), GPU utilisation, power and clocks
+ * (powermetrics), temperatures, fans and thermal pressure (tools/thermal-probe),
+ * memory and swap, load average, and per engine the running / waiting requests
+ * and tok/s (delta of cumulative counters since the previous sample). Stored as one NDJSON file per UTC day under `data/`, kept KEEP_DAYS.
  */
 const SAMPLE_MS = 10_000;
 const KEEP_DAYS = 14;
@@ -35,6 +35,46 @@ async function cpuPercent(): Promise<number | null> {
   return cols && cols.length >= 3 && isFinite(cols[2]) ? 100 - cols[2] : null;
 }
 
+const PROBE = path.join(process.cwd(), "tools", "thermal-probe");
+
+type Probe = {
+  pressure: number | null;
+  fans: Array<{ rpm?: number; target?: number; max?: number }>;
+  sensors: Record<string, number>;
+  smc_family: Record<string, number>;
+  smc_top: Array<[string, number]>;
+};
+
+const mean = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
+const nums = (xs: Array<number | undefined>) => xs.filter((x): x is number => typeof x === "number" && isFinite(x));
+
+/** Temperatures and fans from the probe, GPU clocks and CPU / ANE power from powermetrics. */
+function thermal(out: string, gpu: GpuMetrics): ThermalSample | undefined {
+  if (!out) return undefined;
+  let probe: Probe;
+  try { probe = JSON.parse(out) as Probe; } catch { return undefined; }
+  const die = Object.entries(probe.sensors ?? {}).filter(([k]) => /tdie/.test(k)).map(([, v]) => v);
+  const fans = probe.fans ?? [];
+  const fanMax = nums(fans.map((f) => f.max));
+  // An idle GPU reports its lowest clock; only a busy one says what it is allowed to run at.
+  const busy = (gpu.gpu_utilization_percent ?? 0) >= 20;
+  return {
+    p: probe.pressure ?? null,
+    die: die.length ? Math.max(...die) : null,
+    die_avg: mean(die),
+    fam: probe.smc_family ?? {},
+    top: probe.smc_top?.[0] ?? null,
+    fan: mean(nums(fans.map((f) => f.rpm))),
+    fan_target: mean(nums(fans.map((f) => f.target))),
+    fan_max: fanMax.length ? Math.max(...fanMax) : null,
+    mhz: busy ? gpu.gpu_mhz ?? null : null,
+    mhz_req: busy ? gpu.gpu_requested_mhz ?? null : null,
+    mhz_max: gpu.gpu_max_mhz ?? null,
+    cpu_w: gpu.cpu_power_watts ?? null,
+    ane_w: gpu.ane_power_watts ?? null,
+  };
+}
+
 const fileFor = (t: number) => path.join(DATA_DIR, `load-${new Date(t).toISOString().slice(0, 10)}.ndjson`);
 
 async function sampleOnce(state: State): Promise<void> {
@@ -42,8 +82,8 @@ async function sampleOnce(state: State): Promise<void> {
   state.busy = true;
   try {
     const t = Date.now();
-    const [cpu, gpu, sys, servers] = await Promise.all([
-      cpuPercent(), getGpuMetrics(), getSystemMetrics(), Promise.all(SERVERS.map(fetchServerStatus)),
+    const [cpu, gpu, sys, servers, probe] = await Promise.all([
+      cpuPercent(), getGpuMetrics(), getSystemMetrics(), Promise.all(SERVERS.map(fetchServerStatus)), sh(PROBE, 4000),
     ]);
     const engines: LoadSample["engines"] = {};
     const cur: Record<string, { gen: number; prompt: number }> = {};
@@ -57,6 +97,7 @@ async function sampleOnce(state: State): Promise<void> {
       engines[s.config.id] = { running: c.running, waiting: c.waiting, gen_tps: rate(c.gen, p?.gen), prompt_tps: rate(c.prompt, p?.prompt) };
     }
     state.prev = { t, c: cur };
+    const th = thermal(probe, gpu);
     const sample: LoadSample = {
       t,
       cpu,
@@ -67,6 +108,7 @@ async function sampleOnce(state: State): Promise<void> {
       swap_used: sys?.swap_used_bytes ?? null,
       load1: sys?.load[0] ?? null,
       engines,
+      ...(th ? { th } : {}),
     };
     await mkdir(DATA_DIR, { recursive: true });
     await appendFile(fileFor(t), JSON.stringify(sample) + "\n");

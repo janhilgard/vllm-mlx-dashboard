@@ -10,7 +10,7 @@ export async function getGpuMetrics(): Promise<GpuMetrics> {
   try {
     const output = await new Promise<string>((resolve, reject) => {
       const child = exec(
-        "sudo -S powermetrics --samplers gpu_power -i 1000 -n 1",
+        "sudo -S powermetrics --samplers gpu_power,cpu_power -i 1000 -n 1",
         { timeout: 5000 },
         (error, stdout, stderr) => {
           if (error) {
@@ -31,27 +31,71 @@ export async function getGpuMetrics(): Promise<GpuMetrics> {
   }
 }
 
+/** "(338 MHz:  95% 618 MHz:   0% …)" → [[338, 95], [618, 0], …] */
+function residencies(text: string): Array<[number, number]> {
+  return [...text.matchAll(/([\d.]+) MHz:\s*([\d.]+)%/g)].map((m) => [Number(m[1]), Number(m[2])]);
+}
+
+/** "(P1 :   0% P2 :   0% … P8 : 100% …)" → shares by state number (1-based). */
+function stateShares(text: string): Map<number, number> {
+  return new Map([...text.matchAll(/P(\d+)\s*:\s*([\d.]+)%/g)].map((m) => [Number(m[1]), Number(m[2])]));
+}
+
 function parsePowermetricsOutput(output: string): GpuMetrics {
   let gpuUtilization: number | null = null;
   let gpuPower: number | null = null;
+  let gpuMhz: number | null = null;
+  let table: number[] = [];
+  let requested: Map<number, number> | null = null;
+  let cpuPower: number | null = null;
+  let anePower: number | null = null;
 
   for (const line of output.split("\n")) {
-    // GPU HW active residency: 45.12%
-    const utilizationMatch = line.match(/GPU HW active residency:\s+([\d.]+)%/);
+    // GPU HW active residency:  95.37% (338 MHz:  95% 618 MHz:   0% …)
+    const utilizationMatch = line.match(/GPU HW active residency:\s+([\d.]+)%(.*)/);
     if (utilizationMatch) {
       gpuUtilization = parseFloat(utilizationMatch[1]);
+      // The frequency table in state order (P1 = lowest), as the driver numbers its states.
+      table = residencies(utilizationMatch[2]).map(([mhz]) => mhz);
     }
+    const frequencyMatch = line.match(/GPU HW active frequency:\s+([\d.]+)\s*MHz/);
+    if (frequencyMatch) gpuMhz = parseFloat(frequencyMatch[1]);
+    const requestedMatch = line.match(/GPU SW requested state:\s*\((.*)\)/);
+    if (requestedMatch) requested = stateShares(requestedMatch[1]);
 
     // GPU Power: 12.34 mW  or  GPU Power: 5678 mW
     const powerMatch = line.match(/GPU Power:\s+([\d.]+)\s*mW/);
     if (powerMatch) {
       gpuPower = parseFloat(powerMatch[1]) / 1000; // Convert mW to W
     }
+    const cpuMatch = line.match(/^CPU Power:\s+([\d.]+)\s*mW/);
+    if (cpuMatch) cpuPower = parseFloat(cpuMatch[1]) / 1000;
+    const aneMatch = line.match(/^ANE Power:\s+([\d.]+)\s*mW/);
+    if (aneMatch) anePower = parseFloat(aneMatch[1]) / 1000;
+  }
+
+  // The clock the driver asked for: its requested states weighted by their share, mapped through the
+  // frequency table. Under thermal pressure the granted clock ("active frequency") stays below it.
+  let requestedMhz: number | null = null;
+  if (requested && table.length) {
+    let weight = 0, sum = 0;
+    for (const [state, share] of requested) {
+      const mhz = table[state - 1];
+      if (mhz == null || share <= 0) continue;
+      weight += share;
+      sum += share * mhz;
+    }
+    requestedMhz = weight > 0 ? Math.round(sum / weight) : null;
   }
 
   return {
     gpu_utilization_percent: gpuUtilization,
     gpu_power_watts: gpuPower,
+    gpu_mhz: gpuMhz,
+    gpu_requested_mhz: requestedMhz,
+    gpu_max_mhz: table.length ? Math.max(...table) : null,
+    cpu_power_watts: cpuPower,
+    ane_power_watts: anePower,
   };
 }
 

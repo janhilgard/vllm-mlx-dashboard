@@ -10,6 +10,7 @@ import { SplashCard } from "./splash-card";
 import { OmlxCard } from "./omlx-card";
 import { SystemCard } from "./system-card";
 import { LoadHistory } from "./load-history";
+import { ThermalHistory } from "./thermal-history";
 import { LiveRequests } from "./live-requests";
 import { counters } from "@/lib/counters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,6 +69,8 @@ export function Dashboard() {
           "Throughput" cards showed the same series over the last few minutes
           only while the page was open — the 1h range here covers that. */}
       <LoadHistory />
+
+      <ThermalHistory />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <SystemCard system={gpuData?.system} gpu={gpuData?.gpu} />

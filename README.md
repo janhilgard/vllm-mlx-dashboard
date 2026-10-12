@@ -16,6 +16,7 @@ Real-time monitoring dashboard for local LLM inference servers running on Apple 
 - **Sparkline charts** per server — tok/s throughput and active requests history
 - **Throughput chart** — real-time tok/s computed from token count deltas (not averaged gauges)
 - **GPU chart** — utilization % and power draw over time
+- **Thermals & GPU throttling** — SoC die and SMC temperatures, fan speeds, macOS thermal pressure and the GPU clock granted vs the clock its driver asks for, over 1 h to 7 days, with every episode under thermal pressure and what ran during it
 - Auto-refresh via SWR polling (2s servers, 5s GPU)
 
 ## Monitored Servers
@@ -50,6 +51,7 @@ Dashboard runs at [http://localhost:3000](http://localhost:3000).
 |----------|-------------|
 | `GET /api/servers` | Aggregated status from all configured servers |
 | `GET /api/gpu` | GPU utilization and power metrics |
+| `GET /api/thermal?range=1h\|6h\|24h\|7d` | Thermal history, episodes under pressure and the latest reading |
 
 ## How It Works
 
@@ -65,3 +67,7 @@ The chat tab is rate-limited per client (`src/app/api/chat/route.ts`) because th
 Production runs `next start` under pm2 (`ecosystem.config.cjs`): `npm run build && pm2 restart monitoring`.
 
 The frontend uses SWR to poll `/api/servers` every 2 seconds and computes real-time throughput from the delta of cumulative token counters between consecutive polls.
+
+## Thermals
+
+`tools/thermal-probe` (built by `npm run build`, or `npm run build:probe`) prints one JSON line without root: the HID temperature sensors (`PMU tdie*` = SoC die), the SMC fans (actual, target, min, max rpm), the hottest SMC temperature key per family and overall, and the thermal pressure level macOS throttles by. The sampler runs it every 10 s next to `powermetrics`, which adds the GPU clock it runs at and the clock its driver requested; under thermal pressure the first stays below the second.

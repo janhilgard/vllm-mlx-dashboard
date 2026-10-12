@@ -260,6 +260,37 @@ export interface ServerStatus {
 export interface GpuMetrics {
   gpu_utilization_percent: number | null;
   gpu_power_watts: number | null;
+  /** GPU clock while active, MHz ("GPU HW active frequency"). */
+  gpu_mhz?: number | null;
+  /** The clock the GPU driver asked for (its requested P-states, weighted), MHz. */
+  gpu_requested_mhz?: number | null;
+  /** The top of the GPU's frequency table, MHz. */
+  gpu_max_mhz?: number | null;
+  cpu_power_watts?: number | null;
+  ane_power_watts?: number | null;
+}
+
+/** One reading of tools/thermal-probe plus the GPU clocks, as the sampler stores it. */
+export interface ThermalSample {
+  /** Thermal pressure macOS throttles by: 0 nominal, 1 moderate, 2 heavy, 3 trapping, 4 sleeping. */
+  p: number | null;
+  /** Hottest and mean SoC die sensor (HID "PMU tdie*"), °C. */
+  die: number | null;
+  die_avg: number | null;
+  /** Hottest SMC key per family (Tg, Tp, Te, Tf, TV, ...), °C — raw, Apple doesn't name them. */
+  fam: Record<string, number>;
+  /** The hottest SMC key overall: [key, °C]. */
+  top: [string, number] | null;
+  /** Fans: mean actual and target speed, and the highest allowed, rpm. */
+  fan: number | null;
+  fan_target: number | null;
+  fan_max: number | null;
+  /** GPU clock while active, the clock asked for, and the table's top (null while the GPU idles). */
+  mhz: number | null;
+  mhz_req: number | null;
+  mhz_max: number | null;
+  cpu_w: number | null;
+  ane_w: number | null;
 }
 
 export interface ServersResponse {
@@ -313,6 +344,8 @@ export interface LoadSample {
   swap_used: number | null;
   load1: number | null;
   engines: Record<string, { running: number; waiting: number; gen_tps: number | null; prompt_tps: number | null }>;
+  /** Since 12 Oct 2026; older samples have none. */
+  th?: ThermalSample;
 }
 
 /** One bucket of the history chart: average and peak over the bucket. */
@@ -336,6 +369,46 @@ export interface LoadHistoryResponse {
   samples: number;
   mem_total_gb: number | null;
   engines: string[];
+  from: number;
+  to: number;
+}
+
+/** A stretch of samples under thermal pressure (moderate or worse). */
+export interface ThermalEpisode {
+  from: number;
+  to: number;
+  /** Highest pressure level reached. */
+  peak: number;
+  die_max: number | null;
+  tg_max: number | null;
+  fan_max: number | null;
+  /** Lowest GPU clock and mean clock / requested clock while the GPU was busy. */
+  mhz_min: number | null;
+  clock_ratio: number | null;
+  gpu_avg: number | null;
+  /** Engines that processed tokens during the episode, with their mean tok/s (prompt + generation). */
+  engines: Array<{ id: string; tps: number }>;
+}
+
+export interface ThermalNow extends ThermalSample {
+  t: number;
+  gpu: number | null;
+  gpu_w: number | null;
+}
+
+export interface ThermalHistoryResponse {
+  points: Array<{
+    t: number; label: string;
+    p: number | null; die: number | null; die_peak: number | null; tg: number | null; tp: number | null;
+    fan: number | null; mhz: number | null; mhz_min: number | null; mhz_req: number | null;
+    gpu: number | null; gpu_w: number | null; cpu_w: number | null; ane_w: number | null;
+  }>;
+  bucket_s: number;
+  samples: number;
+  episodes: ThermalEpisode[];
+  /** Share of the range's samples under each pressure level 0..4. */
+  pressure_share: number[];
+  current: ThermalNow | null;
   from: number;
   to: number;
 }
